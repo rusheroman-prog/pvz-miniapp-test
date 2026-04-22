@@ -1,449 +1,950 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Uzum PVZ - Visa Kapitalbank</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root {
-            --tg-bg: var(--tg-theme-bg-color, #ffffff);
-            --tg-text: var(--tg-theme-text-color, #222222);
-            --tg-hint: var(--tg-theme-hint-color, #999999);
-            --tg-btn: var(--tg-theme-button-color, #7000FF);
-            --tg-btn-text: var(--tg-theme-button-text-color, #ffffff);
-            --tg-second: var(--tg-theme-secondary-bg-color, #f4f4f5);
-            --radius: 12px;
-            --green: #34c759;
-            --red: #ff3b30;
-            --orange: #ff9500;
-            --blue: #007aff;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Uzum PVZ — Visa Kapitalbank</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --tg-bg:        var(--tg-theme-bg-color, #ffffff);
+      --tg-text:      var(--tg-theme-text-color, #222222);
+      --tg-hint:      var(--tg-theme-hint-color, #999999);
+      --tg-btn:       var(--tg-theme-button-color, #7000FF);
+      --tg-btn-text:  var(--tg-theme-button-text-color, #ffffff);
+      --tg-second:    var(--tg-theme-secondary-bg-color, #f4f4f5);
+      --radius: 12px;
+      --green:  #34c759;
+      --red:    #ff3b30;
+      --orange: #ff9500;
+      --blue:   #007aff;
+      /* Safe-area отступы iOS */
+      --safe-top:    env(safe-area-inset-top);
+      --safe-bottom: env(safe-area-inset-bottom);
+      --safe-left:   env(safe-area-inset-left);
+      --safe-right:  env(safe-area-inset-right);
+    }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: var(--tg-bg); 
-            color: var(--tg-text); 
-            font-size: 16px;
-            /* Отступ снизу для защиты зоны жестов iOS */
-            padding-bottom: env(safe-area-inset-bottom); 
-        }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-        /* ── Шапка и Дашборд ────────────────────────────────────── */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: var(--tg-bg); 
-            color: var(--tg-text); 
-            font-size: 16px;
-            /* Отступ снизу для защиты зоны жестов iOS */
-            padding-bottom: env(safe-area-inset-bottom); 
-        }
-        .header-top { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 10px;
-        }
-        .header h1 { font-size: 17px; font-weight: 700; }
-        .operator-name { font-size: 13px; color: var(--tg-hint); }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--tg-bg);
+      color: var(--tg-text);
+      font-size: 16px;
+      min-height: 100vh;
+      padding-bottom: var(--safe-bottom);
+    }
 
-        .mini-dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .dash-card {
-            background: var(--tg-second); padding: 8px 12px; border-radius: 10px;
-            font-size: 11px; display: flex; justify-content: space-between; align-items: center;
-        }
-        .dash-card b { font-size: 13px; }
-        
-        .aging-row { 
-            grid-column: span 2; display: flex; gap: 4px; margin-top: 4px; 
-            padding: 6px; background: var(--tg-second); border-radius: 8px;
-        }
-        .age-dot { flex: 1; text-align: center; font-size: 9px; color: var(--tg-hint); }
-        .age-dot b { display: block; font-size: 11px; color: var(--tg-text); }
-        .age-dot.danger b { color: var(--red); }
+    /* ── Шапка ───────────────────────────────────────────────── */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      /* Гарантированный минимум 14px + safe-area если есть */
+      padding-top:    calc(14px + var(--safe-top));
+      padding-bottom: 12px;
+      padding-left:   calc(16px + var(--safe-left));
+      padding-right:  calc(16px + var(--safe-right));
+      background: var(--tg-second);
+      /* Чтобы при прокрутке шапка не сливалась с контентом */
+      box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+    }
+    .header-top {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 10px;
+    }
+    .header h1 { font-size: 17px; font-weight: 700; }
+    .operator-name { font-size: 13px; color: var(--tg-hint); }
 
-        /* ── Экраны ─────────────────────────────────────────────── */
-        .screen { 
-            display: none; 
-            padding: 16px; 
-            /* Чтобы контент не прилипал к краям на безрамочных телефонах */
-            padding-left: calc(16px + env(safe-area-inset-left));
-            padding-right: calc(16px + env(safe-area-inset-right));
-            min-height: 80vh; 
-        }
-        .screen.active { display: block; }
+    /* ── Дашборд ─────────────────────────────────────────────── */
+    .mini-dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .dash-card {
+      background: var(--tg-bg); padding: 10px 12px; border-radius: 10px;
+      font-size: 11px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .dash-card b { font-size: 14px; }
 
-        /* ── Меню ───────────────────────────────────────────────── */
-        .menu-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 12px;
-        }
-        .menu-card {
-            background: var(--tg-second); border-radius: var(--radius);
-            padding: 24px 16px; text-align: center; cursor: pointer;
-            transition: transform 0.1s; border: 2px solid transparent;
-        }
-        .menu-card:active { transform: scale(0.97); }
-        .menu-card.accent { border-color: var(--tg-btn); }
-        .menu-card .icon { font-size: 32px; margin-bottom: 8px; }
-        .menu-card .label { font-size: 14px; font-weight: 600; }
+    .aging-row {
+      grid-column: span 2; display: flex; gap: 4px; margin-top: 4px;
+      padding: 8px; background: var(--tg-bg); border-radius: 8px;
+    }
+    .age-dot { flex: 1; text-align: center; font-size: 9px; color: var(--tg-hint); }
+    .age-dot b { display: block; font-size: 12px; color: var(--tg-text); margin-bottom: 2px; }
+    .age-dot.danger b { color: var(--red); }
 
-        /* ── Формы и Инпуты ─────────────────────────────────────── */
-        .form-section { background: var(--tg-second); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
-        .form-section h3 { font-size: 13px; font-weight: 700; color: var(--tg-hint); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;}
-        
-        .input-row { display: flex; gap: 8px; margin-bottom: 12px; }
-        .field-input {
-            flex: 1; background: var(--tg-bg); border: 1.5px solid rgba(0,0,0,0.1);
-            border-radius: 10px; padding: 12px; font-size: 17px; color: var(--tg-text); outline: none;
-        }
-        .field-input:focus { border-color: var(--tg-btn); }
-        
-        .cam-btn {
-            width: 48px; height: 48px; background: var(--tg-btn); color: white;
-            border: none; border-radius: 10px; font-size: 20px; display: flex; align-items: center; justify-content: center;
-        }
+    /* ── Экраны ──────────────────────────────────────────────── */
+    .screen {
+      display: none;
+      padding: 16px calc(16px + var(--safe-right)) 16px calc(16px + var(--safe-left));
+      min-height: 60vh;
+    }
+    .screen.active { display: block; }
 
-        .btn {
-            width: 100%; padding: 14px; background: var(--tg-btn); color: var(--tg-btn-text);
-            border: none; border-radius: var(--radius); font-size: 16px; font-weight: 600; cursor: pointer;
-        }
-        .btn.secondary { background: var(--tg-second); color: var(--tg-text); }
-        .btn.danger { background: var(--red); color: #fff; }
-        .btn.success { background: var(--green); color: #fff; }
+    /* ── Меню ────────────────────────────────────────────────── */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .menu-card {
+      background: var(--tg-second); border-radius: var(--radius);
+      padding: 24px 16px; text-align: center; cursor: pointer;
+      transition: transform 0.1s; border: 2px solid transparent;
+      user-select: none;
+    }
+    .menu-card:active { transform: scale(0.97); }
+    .menu-card.accent { border-color: var(--tg-btn); }
+    .menu-card .icon  { font-size: 32px; margin-bottom: 8px; }
+    .menu-card .label { font-size: 14px; font-weight: 600; }
 
-        /* ── Карточки результатов (как в вашем коде) ──────────── */
-        .result-card {
-            border-radius: var(--radius); padding: 16px; margin-bottom: 16px; display: none;
-        }
-        .result-card.visible { display: block; }
-        .result-card.ok { background: #e8f5e9; border: 1.5px solid var(--green); }
-        .result-card.err { background: #fce8e8; border: 1.5px solid var(--red); }
-        .result-card.info { background: #e3f2fd; border: 1.5px solid var(--blue); }
-        .rc-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
-        .rc-body { font-size: 14px; opacity: 0.8; }
+    /* ── Формы ───────────────────────────────────────────────── */
+    .form-section {
+      background: var(--tg-second); border-radius: var(--radius);
+      padding: 16px; margin-bottom: 12px;
+    }
+    .form-section h3 {
+      font-size: 13px; font-weight: 700; color: var(--tg-hint);
+      text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;
+    }
 
-        /* ── Специфические элементы (Ячейка и Причины) ─────────── */
-        .big-cell-display {
-            font-size: 42px; font-weight: 800; color: var(--blue);
-            text-align: center; padding: 20px 0; letter-spacing: 2px;
-        }
-        
-        .reason-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px;}
-        .reason-btn {
-            padding: 14px; background: var(--tg-bg); border: 1.5px solid rgba(0,0,0,0.1);
-            border-radius: 10px; text-align: left; font-size: 15px; cursor: pointer;
-            color: var(--tg-text);
-        }
-        .reason-btn.selected { border-color: var(--tg-btn); background: rgba(112, 0, 255, 0.05); }
+    .input-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .field-input {
+      flex: 1; min-width: 0;
+      background: var(--tg-bg); border: 1.5px solid rgba(0,0,0,0.1);
+      border-radius: 10px; padding: 12px; font-size: 17px;
+      color: var(--tg-text); outline: none;
+      min-height: 48px;
+    }
+    .field-input:focus { border-color: var(--tg-btn); }
 
-        /* ── Статистика ─────────────────────────────────────────── */
-        .stat-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; }
-        .stat-tab {
-            padding: 8px 16px; background: var(--tg-second); border-radius: 20px;
-            font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer;
-        }
-        .stat-tab.active { background: var(--tg-btn); color: #fff; }
-        
-        .order-item {
-            background: var(--tg-second); border-radius: 10px; padding: 12px; margin-bottom: 8px;
-        }
-        .order-item-head { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 4px; }
-        .order-item-sub { font-size: 12px; color: var(--tg-hint); }
-    </style>
+    .cam-btn {
+      width: 48px; height: 48px; flex-shrink: 0;
+      background: var(--tg-btn); color: white; border: none;
+      border-radius: 10px; font-size: 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .btn {
+      width: 100%; padding: 14px; min-height: 48px;
+      background: var(--tg-btn); color: var(--tg-btn-text);
+      border: none; border-radius: var(--radius);
+      font-size: 16px; font-weight: 600; cursor: pointer;
+    }
+    .btn:disabled  { opacity: 0.5; cursor: default; }
+    .btn.secondary { background: var(--tg-second); color: var(--tg-text); }
+    .btn.danger    { background: var(--red); color: #fff; }
+    .btn.success   { background: var(--green); color: #fff; }
+
+    /* ── Карточки результатов ────────────────────────────────── */
+    .result-card {
+      border-radius: var(--radius); padding: 16px; margin-bottom: 16px;
+      display: none;
+    }
+    .result-card.visible { display: block; }
+    .result-card.ok   { background: #e8f5e9; border: 1.5px solid var(--green); }
+    .result-card.err  { background: #fce8e8; border: 1.5px solid var(--red); }
+    .result-card.info { background: #e3f2fd; border: 1.5px solid var(--blue); }
+    .rc-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+    .rc-body  { font-size: 14px; opacity: 0.8; }
+
+    /* ── Большая ячейка для выдачи ───────────────────────────── */
+    .big-cell-display {
+      font-size: 42px; font-weight: 800; color: var(--blue);
+      text-align: center; padding: 20px 0; letter-spacing: 2px;
+    }
+
+    /* ── Причины возврата ────────────────────────────────────── */
+    .reason-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+    .reason-btn {
+      padding: 14px; background: var(--tg-bg);
+      border: 1.5px solid rgba(0,0,0,0.1); border-radius: 10px;
+      text-align: left; font-size: 15px; cursor: pointer;
+      color: var(--tg-text);
+    }
+    .reason-btn.selected { border-color: var(--tg-btn); background: rgba(112,0,255,0.05); }
+
+    /* ── Статистика ──────────────────────────────────────────── */
+    .stat-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; }
+    .stat-tab {
+      padding: 8px 16px; background: var(--tg-second); border-radius: 20px;
+      font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer;
+    }
+    .stat-tab.active { background: var(--tg-btn); color: #fff; }
+
+    .order-item {
+      background: var(--tg-second); border-radius: 10px;
+      padding: 12px; margin-bottom: 8px;
+    }
+    .order-item-head { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 4px; }
+    .order-item-sub  { font-size: 12px; color: var(--tg-hint); }
+
+    /* ── Онбординг (выбор ПВЗ при первом входе) ──────────────── */
+    .onboard-hero {
+      text-align: center; padding: 32px 0;
+    }
+    .onboard-hero .icon { font-size: 64px; margin-bottom: 12px; }
+    .onboard-hero h2    { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .onboard-hero p     { color: var(--tg-hint); font-size: 14px; }
+
+    .pvz-list { max-height: 50vh; overflow-y: auto; margin-top: 16px; }
+    .pvz-item {
+      padding: 14px 16px; background: var(--tg-second); border-radius: 10px;
+      margin-bottom: 6px; cursor: pointer; font-size: 16px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .pvz-item:active { background: rgba(112,0,255,0.1); }
+    .pvz-item .arrow { color: var(--tg-hint); }
+
+    /* ── Загрузка ────────────────────────────────────────────── */
+    .loading {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 70vh; color: var(--tg-hint);
+    }
+    .spinner {
+      width: 36px; height: 36px; margin-bottom: 12px;
+      border: 3px solid var(--tg-second);
+      border-top-color: var(--tg-btn);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Ошибка авторизации ──────────────────────────────────── */
+    .auth-error {
+      padding: 32px; text-align: center;
+    }
+    .auth-error .icon { font-size: 48px; margin-bottom: 12px; }
+    .auth-error h2    { color: var(--red); font-size: 18px; margin-bottom: 8px; }
+    .auth-error p     { color: var(--tg-hint); font-size: 14px; }
+  </style>
 </head>
 <body>
 
-    <div class="header">
-        <div class="header-top">
-            <h1 id="pvz-title">ТАШ-TEST</h1>
-            <div class="operator-name" id="op-name">👤 Загрузка...</div>
-        </div>
-        <div class="mini-dashboard">
-            <div class="dash-card"><span>🚚 В пути</span> <b id="d-shipped">0</b></div>
-            <div class="dash-card"><span>📦 Склад</span> <b id="d-arrived">0</b></div>
-            <div class="aging-row">
-                <div class="age-dot">до 1д <b id="a-1">0</b></div>
-                <div class="age-dot">1-3д <b id="a-3">0</b></div>
-                <div class="age-dot">3-5д <b id="a-5">0</b></div>
-                <div class="age-dot">5-7д <b id="a-7">0</b></div>
-                <div class="age-dot danger">>7д <b id="a-max">0</b></div>
-            </div>
-        </div>
+<!-- ═══════════════ ЗАГРУЗКА ═══════════════ -->
+<div id="scr-loading" class="loading">
+  <div class="spinner"></div>
+  <div>Авторизация...</div>
+</div>
+
+<!-- ═══════════════ ОНБОРДИНГ ═══════════════ -->
+<div id="scr-onboard" class="screen">
+  <div class="onboard-hero">
+    <div class="icon">📦</div>
+    <h2>Добро пожаловать!</h2>
+    <p>Выберите свой пункт выдачи.<br>Изменить можно будет только через администратора.</p>
+  </div>
+  <div class="form-section">
+    <input type="text" class="field-input" id="onb-search"
+           placeholder="🔍 Поиск ПВЗ (например ТАШ-123)"
+           oninput="filterOnboardPvz(this.value)" inputmode="search">
+  </div>
+  <div class="pvz-list" id="onb-list">
+    <div class="loading"><div class="spinner"></div>Загрузка списка ПВЗ...</div>
+  </div>
+</div>
+
+<!-- ═══════════════ ОШИБКА АВТОРИЗАЦИИ ═══════════════ -->
+<div id="scr-auth-error" class="screen">
+  <div class="auth-error">
+    <div class="icon">⛔</div>
+    <h2 id="ae-title">Ошибка авторизации</h2>
+    <p id="ae-text">Не удалось войти в систему</p>
+    <button class="btn" style="margin-top:24px" onclick="location.reload()">Попробовать снова</button>
+  </div>
+</div>
+
+<!-- ═══════════════ ОСНОВНОЕ ПРИЛОЖЕНИЕ ═══════════════ -->
+<div id="app" style="display:none">
+
+  <div class="header">
+    <div class="header-top">
+      <h1 id="pvz-title">—</h1>
+      <div class="operator-name" id="op-name">👤 —</div>
     </div>
-
-    <div id="scr-main" class="screen active">
-        <div class="menu-grid">
-            <div class="menu-card accent" onclick="nav('scr-rec')">
-                <div class="icon">📥</div>
-                <div class="label">Приёмка</div>
-            </div>
-            <div class="menu-card" onclick="nav('scr-iss')">
-                <div class="icon">📤</div>
-                <div class="label">Выдача</div>
-            </div>
-            <div class="menu-card" onclick="nav('scr-ret')">
-                <div class="icon">↩️</div>
-                <div class="label">Возврат</div>
-            </div>
-            <div class="menu-card" onclick="nav('scr-stat')">
-                <div class="icon">📊</div>
-                <div class="label">Статистика</div>
-            </div>
-        </div>
+    <div class="mini-dashboard">
+      <div class="dash-card"><span>🚚 В пути</span><b id="d-shipped">0</b></div>
+      <div class="dash-card"><span>📦 На складе</span><b id="d-arrived">0</b></div>
+      <div class="aging-row">
+        <div class="age-dot"><b id="a-1">0</b>до 1д</div>
+        <div class="age-dot"><b id="a-3">0</b>1–3д</div>
+        <div class="age-dot"><b id="a-5">0</b>3–5д</div>
+        <div class="age-dot"><b id="a-7">0</b>5–7д</div>
+        <div class="age-dot danger"><b id="a-max">0</b>&gt;7д</div>
+      </div>
     </div>
+  </div>
 
-    <div id="scr-rec" class="screen">
-        <div class="form-section">
-            <h3>Шаг 1 — Номер заказа</h3>
-            <div class="input-row">
-                <input type="text" id="rec-id" class="field-input" placeholder="Сканируйте или введите">
-                <button class="cam-btn" onclick="scan('rec-id', checkRec)">📷</button>
-            </div>
-            <button class="btn" onclick="checkRec()">Проверить заказ</button>
-        </div>
-
-        <div id="rec-res" class="result-card"></div>
-
-        <div id="rec-step2" style="display:none">
-            <div class="form-section">
-                <h3>Шаг 2 — Размещение</h3>
-                <input type="text" id="rec-cell" class="field-input" placeholder="Введите ячейку (напр. А-12)" style="margin-bottom:12px">
-                <button class="btn success" onclick="doRec()">✅ Принять и сохранить</button>
-            </div>
-        </div>
+  <!-- Главное меню -->
+  <div id="scr-main" class="screen active">
+    <div class="menu-grid">
+      <div class="menu-card accent" onclick="nav('scr-rec')">
+        <div class="icon">📥</div><div class="label">Приёмка</div>
+      </div>
+      <div class="menu-card" onclick="nav('scr-iss')">
+        <div class="icon">📤</div><div class="label">Выдача</div>
+      </div>
+      <div class="menu-card" onclick="nav('scr-ret')">
+        <div class="icon">↩️</div><div class="label">Возврат</div>
+      </div>
+      <div class="menu-card" onclick="nav('scr-stat')">
+        <div class="icon">📊</div><div class="label">Статистика</div>
+      </div>
     </div>
+  </div>
 
-    <div id="scr-iss" class="screen">
-        <div class="form-section">
-            <h3>Поиск заказа клиента</h3>
-            <div class="input-row">
-                <input type="text" id="iss-id" class="field-input" placeholder="Номер заказа">
-                <button class="cam-btn" onclick="scan('iss-id', findIss)">📷</button>
-            </div>
-            <button class="btn" onclick="findIss()">Найти заказ</button>
-        </div>
-
-        <div id="iss-res" class="result-card"></div>
-
-        <div id="iss-confirm" style="display:none">
-            <div class="form-section">
-                <h3>Заказ на полке:</h3>
-                <div class="big-cell-display" id="iss-cell-val">---</div>
-                <button class="btn success" onclick="doIss()">✅ Подтвердить выдачу</button>
-                <button class="btn secondary" style="margin-top:8px" onclick="nav('scr-main')">Отмена</button>
-            </div>
-        </div>
+  <!-- Приёмка -->
+  <div id="scr-rec" class="screen">
+    <div class="form-section">
+      <h3>Шаг 1 — Номер заказа</h3>
+      <div class="input-row">
+        <input type="text" id="rec-id" class="field-input" placeholder="Сканируйте или введите" inputmode="numeric">
+        <button class="cam-btn" onclick="scan('rec-id', checkRec)">📷</button>
+      </div>
+      <button class="btn" onclick="checkRec()">Проверить заказ</button>
     </div>
-
-    <div id="scr-ret" class="screen">
-        <div class="form-section">
-            <h3>Оформление возврата</h3>
-            <div class="input-row">
-                <input type="text" id="ret-id" class="field-input" placeholder="Номер заказа">
-                <button class="cam-btn" onclick="scan('ret-id', checkRet)">📷</button>
-            </div>
-            <button class="btn" onclick="checkRet()">Найти для возврата</button>
-        </div>
-
-        <div id="ret-res" class="result-card"></div>
-
-        <div id="ret-step2" style="display:none">
-            <div class="form-section">
-                <h3>Укажите причину:</h3>
-                <div class="reason-list" id="reasons">
-                    <button class="reason-btn" onclick="selRet('Не тот товар', this)">Не тот товар</button>
-                    <button class="reason-btn" onclick="selRet('Брак / Повреждение', this)">Брак / Повреждение</button>
-                    <button class="reason-btn" onclick="selRet('Не хватает товара', this)">Не хватает товара</button>
-                    <button class="reason-btn" onclick="selRet('Отказ клиента', this)">Отказ клиента</button>
-                </div>
-                <button class="btn danger" style="margin-top:16px" onclick="doRet()">↩️ Оформить возврат</button>
-            </div>
-        </div>
+    <div id="rec-res" class="result-card"></div>
+    <div id="rec-step2" style="display:none">
+      <div class="form-section">
+        <h3>Шаг 2 — Размещение</h3>
+        <input type="text" id="rec-cell" class="field-input"
+               placeholder="Введите ячейку (напр. А-12)" style="margin-bottom:12px">
+        <button class="btn success" id="btn-do-rec" onclick="doRec()">✅ Принять и сохранить</button>
+      </div>
     </div>
+  </div>
 
-    <div id="scr-stat" class="screen">
-        <div class="stat-tabs">
-            <div class="stat-tab active" onclick="stat('ARRIVED_AT_PVZ', this)">На складе</div>
-            <div class="stat-tab" onclick="stat('SHIPPED', this)">В пути</div>
-            <div class="stat-tab" onclick="stat('COMPLETED', this)">Выданы</div>
-            <div class="stat-tab" onclick="stat('RETURNED', this)">Возврат</div>
-        </div>
-        <div id="stat-list"></div>
+  <!-- Выдача -->
+  <div id="scr-iss" class="screen">
+    <div class="form-section">
+      <h3>Поиск заказа клиента</h3>
+      <div class="input-row">
+        <input type="text" id="iss-id" class="field-input" placeholder="Номер заказа" inputmode="numeric">
+        <button class="cam-btn" onclick="scan('iss-id', findIss)">📷</button>
+      </div>
+      <button class="btn" onclick="findIss()">Найти заказ</button>
     </div>
+    <div id="iss-res" class="result-card"></div>
+    <div id="iss-confirm" style="display:none">
+      <div class="form-section">
+        <h3>Заказ на полке:</h3>
+        <div class="big-cell-display" id="iss-cell-val">—</div>
+        <button class="btn success" id="btn-do-iss" onclick="doIss()">✅ Подтвердить выдачу</button>
+        <button class="btn secondary" style="margin-top:8px" onclick="nav('scr-main')">Отмена</button>
+      </div>
+    </div>
+  </div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.ready();
-        tg.BackButton.onClick(() => nav('scr-main'));
-        if (tg.disableVerticalSwipes) tg.disableVerticalSwipes(); // Защита от закрытия
-        if (tg.requestFullscreen) tg.requestFullscreen();       // Максимальный экран
+  <!-- Возврат -->
+  <div id="scr-ret" class="screen">
+    <div class="form-section">
+      <h3>Оформление возврата</h3>
+      <div class="input-row">
+        <input type="text" id="ret-id" class="field-input" placeholder="Номер заказа" inputmode="numeric">
+        <button class="cam-btn" onclick="scan('ret-id', checkRet)">📷</button>
+      </div>
+      <button class="btn" onclick="checkRet()">Найти для возврата</button>
+    </div>
+    <div id="ret-res" class="result-card"></div>
+    <div id="ret-step2" style="display:none">
+      <div class="form-section">
+        <h3>Укажите причину:</h3>
+        <div class="reason-list" id="reasons">
+          <button class="reason-btn" onclick="selRet('Не тот товар', this)">Не тот товар</button>
+          <button class="reason-btn" onclick="selRet('Брак / Повреждение', this)">Брак / Повреждение</button>
+          <button class="reason-btn" onclick="selRet('Не хватает товара', this)">Не хватает товара</button>
+          <button class="reason-btn" onclick="selRet('Отказ клиента', this)">Отказ клиента</button>
+        </div>
+        <button class="btn danger" id="btn-do-ret" style="margin-top:16px" onclick="doRet()">↩️ Оформить возврат</button>
+      </div>
+    </div>
+  </div>
 
-    
+  <!-- Статистика -->
+  <div id="scr-stat" class="screen">
+    <div class="stat-tabs">
+      <div class="stat-tab active" onclick="stat('ARRIVED_AT_PVZ', this)">На складе</div>
+      <div class="stat-tab" onclick="stat('SHIPPED', this)">В пути</div>
+      <div class="stat-tab" onclick="stat('COMPLETED', this)">Выданы</div>
+      <div class="stat-tab" onclick="stat('RETURNED', this)">Возврат</div>
+    </div>
+    <div id="stat-list"></div>
+  </div>
 
-        // КЛЮЧИ SUPABASE
-        const S_URL = "https://ysvogudznyuszssdriih.supabase.co";
-        const S_KEY = "sb_publishable_kU91fqnkt80hbLcVEms6oA_eXKVzY2A"; 
+</div>
 
-        let db = null;
-        let orders = [];
-        let curRetReason = "";
-        let curOrder = null;
+<script>
+// ════════════════════════════════════════════════
+// КОНФИГ
+// ════════════════════════════════════════════════
+const S_URL = "https://ysvogudznyuszssdriih.supabase.co";
+const S_KEY = "sb_publishable_kU91fqnkt80hbLcVEms6oA_eXKVzY2A";
 
-        async function init() {
-            try {
-                const initData = tg.initData;
-                const resp = await fetch(`${S_URL}/functions/v1/auth`, {
-                    method: 'POST', body: JSON.stringify({ initData })
-                });
-                const { token } = await resp.json();
-                db = window.supabase.createClient(S_URL, S_KEY, {
-                    global: { headers: { Authorization: `Bearer ${token}` } }
-                });
+// ════════════════════════════════════════════════
+// СОСТОЯНИЕ
+// ════════════════════════════════════════════════
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+tg.disableVerticalSwipes?.();
+// ВАЖНО: НЕ вызываем requestFullscreen — он ломает safe-area iOS
 
-                // Грузим профиль
-                const { data: m } = await db.from('managers').select('*').eq('telegram_id', tg.initDataUnsafe.user.id).single();
-                if (m) {
-                    document.getElementById('op-name').innerHTML = `👤 <b>${m.name}</b>`;
-                    document.getElementById('pvz-title').innerText = Array.isArray(m.pvz_codes) ? m.pvz_codes[0] : m.pvz_codes;
-                }
-                load();
-            } catch (e) { console.error(e); }
-        }
+// ── Safe-area fix ───────────────────────────────────────────
+// Проблема: в некоторых версиях Telegram iOS env(safe-area-inset-top)
+// возвращает 0, и контент залезает под Dynamic Island / notch.
+// Решение: переопределяем --safe-top гарантированным минимумом для iOS с вырезом.
+function applySafeAreaFallback() {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const hasNotch = window.screen.height >= 812 || window.screen.width >= 812;
 
-        async function load() {
-            const { data } = await db.from('orders').select('*');
-            orders = data || [];
-            updateDash();
-        }
+  if (isIOS && hasNotch) {
+    // Переопределяем CSS-переменную гарантированным значением
+    // max(env(...), 44px) = либо системный safe-area, либо 44px (что больше)
+    document.documentElement.style.setProperty(
+      "--safe-top",
+      "max(env(safe-area-inset-top), 44px)"
+    );
+  }
+}
+applySafeAreaFallback();
+tg.onEvent?.("viewportChanged", applySafeAreaFallback);
 
-        function updateDash() {
-            const now = new Date();
-            let shipped = 0, arrived = 0, a1=0, a3=0, a5=0, a7=0, aMax=0;
+let db = null;
+let me = null;          // { tg_id, name, role, pvz_code }
+let curOrder = null;
+let curRetReason = "";
+let allPvz = [];
 
-            orders.forEach(o => {
-                if(o.status === 'SHIPPED') shipped++;
-                if(o.status === 'ARRIVED_AT_PVZ') {
-                    arrived++;
-                    const diff = Math.floor((now - new Date(o.created_at)) / 86400000);
-                    if(diff <= 1) a1++; else if(diff <= 3) a3++; else if(diff <= 5) a5++; else if(diff <= 7) a7++; else aMax++;
-                }
-            });
-            document.getElementById('d-shipped').innerText = shipped;
-            document.getElementById('d-arrived').innerText = arrived;
-            document.getElementById('a-1').innerText = a1; document.getElementById('a-3').innerText = a3;
-            document.getElementById('a-5').innerText = a5; document.getElementById('a-7').innerText = a7;
-            document.getElementById('a-max').innerText = aMax;
-        }
+// ════════════════════════════════════════════════
+// УТИЛИТЫ
+// ════════════════════════════════════════════════
+function esc(s) {
+  return String(s ?? "")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
 
-        function nav(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            tg.BackButton[id === 'scr-main' ? 'hide' : 'show']();
-            // Сброс всех состояний при переходе
-            document.getElementById('rec-step2').style.display = 'none';
-            document.getElementById('iss-confirm').style.display = 'none';
-            document.getElementById('ret-step2').style.display = 'none';
-            document.querySelectorAll('.result-card').forEach(r => r.style.display = 'none');
-            if(id === 'scr-stat') stat('ARRIVED_AT_PVZ', document.querySelector('.stat-tab'));
-            load();
-        }
+function showScreen(id) {
+  ["scr-loading","scr-onboard","scr-auth-error","app"].forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.style.display = "none";
+  });
+  if (id === "app") {
+    document.getElementById("app").style.display = "block";
+    document.querySelectorAll("#app .screen").forEach(s => s.classList.remove("active"));
+    document.getElementById("scr-main").classList.add("active");
+  } else {
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.display = "block";
+      el.classList?.add("active");
+    }
+  }
+}
 
-        function scan(inpId, cb) {
-            tg.showScanQrPopup({ text: "Сканируйте ШК" }, (txt) => {
-                document.getElementById(inpId).value = txt;
-                cb(); return true;
-            });
-        }
+function showAuthError(text) {
+  document.getElementById("ae-text").textContent = text || "Не удалось войти в систему";
+  showScreen("scr-auth-error");
+}
 
-        function res(id, type, t, b) {
-            const el = document.getElementById(id);
-            el.className = `result-card visible ${type}`;
-            el.innerHTML = `<div class="rc-title">${t}</div><div class="rc-body">${b}</div>`;
-        }
+function res(id, type, t, b) {
+  const el = document.getElementById(id);
+  el.className = `result-card visible ${type}`;
+  el.innerHTML = `<div class="rc-title">${esc(t)}</div><div class="rc-body">${b || ""}</div>`;
+}
 
-        // ПРИЕМКА
-        async function checkRec() {
-            const id = document.getElementById('rec-id').value.trim();
-            curOrder = orders.find(o => o.order_id === id || o.sku === id);
-            if(!curOrder) return res('rec-res', 'err', '❌ Не найден', 'Заказ отсутствует в базе ожидания');
-            if(curOrder.status !== 'SHIPPED') return res('rec-res', 'info', 'ℹ️ Уже принят', `Заказ уже на ПВЗ в ячейке ${curOrder.cell || '?'}`);
-            
-            res('rec-res', 'ok', '✅ Заказ найден', `Клиент: ${curOrder.client_name}<br>Товар: ${curOrder.sku}`);
-            document.getElementById('rec-step2').style.display = 'block';
-        }
-        async function doRec() {
-            const cell = document.getElementById('rec-cell').value.trim();
-            if(!cell) return tg.showAlert("Укажите ячейку!");
-            await db.from('orders').update({ status: 'ARRIVED_AT_PVZ', cell }).eq('order_id', curOrder.order_id);
-            tg.HapticFeedback.notificationOccurred('success');
-            nav('scr-main');
-            tg.showAlert("Принято!");
-        }
+function haptic(type) {
+  try { tg.HapticFeedback?.notificationOccurred?.(type); } catch {}
+}
 
-        // ВЫДАЧА
-        async function findIss() {
-            const id = document.getElementById('iss-id').value.trim();
-            curOrder = orders.find(o => o.order_id === id || o.sku === id);
-            if(!curOrder) return res('iss-res', 'err', '❌ Заказ не найден', 'Проверьте номер заказа');
-            if(curOrder.status !== 'ARRIVED_AT_PVZ') return res('iss-res', 'err', '❌ Не готов', `Статус: ${curOrder.status}`);
+// ════════════════════════════════════════════════
+// АВТОРИЗАЦИЯ
+// ════════════════════════════════════════════════
+async function authRequest(extra) {
+  const body = { initData: tg.initData, ...(extra || {}) };
+  const resp = await fetch(`${S_URL}/functions/v1/auth`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${resp.status}`);
+  }
+  return await resp.json();
+}
 
-            res('iss-res', 'info', '✅ Найден на складе', `Клиент: ${curOrder.client_name}`);
-            document.getElementById('iss-cell-val').innerText = curOrder.cell || '???';
-            document.getElementById('iss-confirm').style.display = 'block';
-        }
-        async function doIss() {
-            await db.from('orders').update({ status: 'COMPLETED' }).eq('order_id', curOrder.order_id);
-            tg.HapticFeedback.notificationOccurred('success');
-            nav('scr-main');
-            tg.showAlert("Выдано!");
-        }
+async function init() {
+  try {
+    if (!tg.initData) {
+      showAuthError("Приложение должно открываться через Telegram бота");
+      return;
+    }
 
-        // ВОЗВРАТ
-        async function checkRet() {
-            const id = document.getElementById('ret-id').value.trim();
-            curOrder = orders.find(o => o.order_id === id || o.sku === id);
-            if(!curOrder) return res('ret-res', 'err', '❌ Не найден', 'Заказ не найден');
-            res('ret-res', 'info', '✅ Заказ найден', `Клиент: ${curOrder.client_name}`);
-            document.getElementById('ret-step2').style.display = 'block';
-        }
-        function selRet(r, btn) {
-            curRetReason = r;
-            document.querySelectorAll('.reason-btn').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-        }
-        async function doRet() {
-            if(!curRetReason) return tg.showAlert("Выберите причину!");
-            await db.from('orders').update({ status: 'RETURNED', return_reason: curRetReason }).eq('order_id', curOrder.order_id);
-            tg.HapticFeedback.notificationOccurred('error');
-            nav('scr-main');
-            tg.showAlert("Возврат оформлен");
-        }
+    const result = await authRequest();
 
-        // СТАТИСТИКА
-        function stat(s, btn) {
-            document.querySelectorAll('.stat-tab').forEach(t => t.classList.remove('active'));
-            btn.classList.add('active');
-            const list = document.getElementById('stat-list');
-            list.innerHTML = '';
-            const filtered = orders.filter(o => o.status === s);
-            if(!filtered.length) list.innerHTML = '<div style="text-align:center; padding:20px; color:#999">Пусто</div>';
-            filtered.forEach(o => {
-                list.innerHTML += `
-                    <div class="order-item">
-                        <div class="order-item-head"><span>${o.order_id}</span> <span style="color:var(--blue)">${o.cell||''}</span></div>
-                        <div class="order-item-sub">${o.client_name} · ${o.sku}</div>
-                        ${o.return_reason ? `<div class="order-item-sub" style="color:var(--red)">${o.return_reason}</div>` : ''}
-                    </div>
-                `;
-            });
-        }
+    // Нужен онбординг — выбор ПВЗ
+    if (result.needs_onboarding) {
+      me = { tg_id: result.tg_id, name: result.name };
+      showOnboarding();
+      return;
+    }
 
-        init();
-    </script>
+    // Успешная авторизация
+    me = result;
+    initSupabaseClient(result.token);
+    showApp();
+
+  } catch (err) {
+    console.error("Auth error:", err);
+    showAuthError(err.message);
+  }
+}
+
+function initSupabaseClient(token) {
+  db = window.supabase.createClient(S_URL, S_KEY, {
+    global: { headers: { Authorization: `Bearer ${token}` } }
+  });
+}
+
+// ════════════════════════════════════════════════
+// ОНБОРДИНГ
+// ════════════════════════════════════════════════
+async function showOnboarding() {
+  showScreen("scr-onboard");
+
+  // Загружаем список ПВЗ через временный клиент с anon-ключом
+  // (у таблицы pvz RLS требует только что tg_id != '', но без токена SELECT не пройдёт)
+  // Поэтому грузим список через Edge Function — он вернёт список из service_role
+  try {
+    const tempDb = window.supabase.createClient(S_URL, S_KEY);
+    const { data, error } = await tempDb.from("pvz").select("code, name, address").order("code");
+    if (error) throw error;
+    allPvz = data || [];
+    renderOnboardPvz(allPvz);
+  } catch (err) {
+    document.getElementById("onb-list").innerHTML =
+      `<div class="auth-error"><div class="icon">⚠️</div>
+       <p>Не удалось загрузить список ПВЗ: ${esc(err.message)}</p></div>`;
+  }
+}
+
+function filterOnboardPvz(q) {
+  const query = q.toLowerCase().trim();
+  const filtered = !query ? allPvz : allPvz.filter(p =>
+    p.code.toLowerCase().includes(query) ||
+    (p.name || "").toLowerCase().includes(query)
+  );
+  renderOnboardPvz(filtered);
+}
+
+function renderOnboardPvz(list) {
+  const el = document.getElementById("onb-list");
+  if (!list.length) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--tg-hint)">Ничего не найдено</div>';
+    return;
+  }
+  el.innerHTML = list.map(p => `
+    <div class="pvz-item" onclick="selectPvz('${esc(p.code)}', '${esc(p.name || "")}')">
+      <div>
+        <div style="font-weight:600">${esc(p.code)}</div>
+        ${p.name ? `<div style="font-size:12px;color:var(--tg-hint)">${esc(p.name)}</div>` : ''}
+      </div>
+      <div class="arrow">›</div>
+    </div>
+  `).join("");
+}
+
+async function selectPvz(code, name) {
+  // Подтверждение — ПВЗ изменить нельзя будет
+  tg.showPopup({
+    title: "Подтвердите выбор",
+    message: `ПВЗ: ${code}\n${name ? name + '\n\n' : '\n'}Изменить можно только через администратора. Продолжить?`,
+    buttons: [
+      { id: "ok",     type: "default",     text: "Да, выбрать" },
+      { id: "cancel", type: "cancel" }
+    ]
+  }, async (btnId) => {
+    if (btnId !== "ok") return;
+
+    try {
+      haptic("warning");
+      const result = await authRequest({ register_pvz: code });
+      me = result;
+      initSupabaseClient(result.token);
+      haptic("success");
+      showApp();
+    } catch (err) {
+      tg.showAlert("Ошибка регистрации: " + err.message);
+    }
+  });
+}
+
+// ════════════════════════════════════════════════
+// ГЛАВНОЕ ПРИЛОЖЕНИЕ
+// ════════════════════════════════════════════════
+function showApp() {
+  showScreen("app");
+
+  document.getElementById("op-name").innerHTML = `👤 <b>${esc(me.name)}</b>`;
+  const titleEl = document.getElementById("pvz-title");
+
+  if (me.role === "admin")     titleEl.textContent = "🛡 Администратор";
+  else if (me.role === "ru")   titleEl.textContent = "🌍 Регион";
+  else if (me.role === "tu")   titleEl.textContent = "📊 ТУ";
+  else                          titleEl.textContent = me.pvz_code || "—";
+
+  tg.BackButton.onClick(() => nav("scr-main"));
+  loadDashboard();
+}
+
+// ════════════════════════════════════════════════
+// ДАШБОРД (точечные счётчики, а не SELECT *)
+// ════════════════════════════════════════════════
+async function loadDashboard() {
+  try {
+    // Загружаем только нужные поля и только нужные статусы
+    const { data, error } = await db
+      .from("orders")
+      .select("status, created_at")
+      .in("status", ["SHIPPED", "ARRIVED_AT_PVZ"]);
+
+    if (error) throw error;
+
+    const now = Date.now();
+    let shipped = 0, arrived = 0;
+    let a1 = 0, a3 = 0, a5 = 0, a7 = 0, aMax = 0;
+
+    (data || []).forEach(o => {
+      if (o.status === "SHIPPED") shipped++;
+      else if (o.status === "ARRIVED_AT_PVZ") {
+        arrived++;
+        const days = Math.floor((now - new Date(o.created_at).getTime()) / 86400000);
+        if      (days <= 1) a1++;
+        else if (days <= 3) a3++;
+        else if (days <= 5) a5++;
+        else if (days <= 7) a7++;
+        else                aMax++;
+      }
+    });
+
+    document.getElementById("d-shipped").textContent = shipped;
+    document.getElementById("d-arrived").textContent = arrived;
+    document.getElementById("a-1").textContent   = a1;
+    document.getElementById("a-3").textContent   = a3;
+    document.getElementById("a-5").textContent   = a5;
+    document.getElementById("a-7").textContent   = a7;
+    document.getElementById("a-max").textContent = aMax;
+  } catch (err) {
+    console.error("Dashboard error:", err);
+  }
+}
+
+// ════════════════════════════════════════════════
+// НАВИГАЦИЯ
+// ════════════════════════════════════════════════
+function nav(id) {
+  document.querySelectorAll("#app .screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  tg.BackButton[id === "scr-main" ? "hide" : "show"]();
+  haptic("success");
+
+  // Сброс всех временных состояний
+  document.getElementById("rec-step2").style.display = "none";
+  document.getElementById("iss-confirm").style.display = "none";
+  document.getElementById("ret-step2").style.display = "none";
+  document.querySelectorAll(".result-card").forEach(r => r.classList.remove("visible"));
+
+  curOrder = null;
+  curRetReason = "";
+
+  // Очистить inputs
+  ["rec-id","rec-cell","iss-id","ret-id"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  document.querySelectorAll(".reason-btn").forEach(b => b.classList.remove("selected"));
+
+  // Автофокус для аппаратных сканеров
+  setTimeout(() => {
+    if (id === "scr-rec") document.getElementById("rec-id")?.focus();
+    if (id === "scr-iss") document.getElementById("iss-id")?.focus();
+    if (id === "scr-ret") document.getElementById("ret-id")?.focus();
+  }, 100);
+
+  if (id === "scr-stat") stat("ARRIVED_AT_PVZ", document.querySelector(".stat-tab"));
+  if (id === "scr-main") loadDashboard();
+}
+
+function scan(inpId, cb) {
+  if (!tg.showScanQrPopup) {
+    tg.showAlert("Сканер недоступен. Введите номер вручную.");
+    return;
+  }
+  tg.showScanQrPopup({ text: "Сканируйте ШК" }, (txt) => {
+    if (txt) {
+      document.getElementById(inpId).value = txt.trim();
+      cb();
+    }
+    return true;
+  });
+}
+
+// ════════════════════════════════════════════════
+// ПРИЁМКА (точечный SELECT + защита от двойного UPDATE)
+// ════════════════════════════════════════════════
+async function checkRec() {
+  const id = document.getElementById("rec-id").value.trim();
+  if (!id) return res("rec-res", "err", "❌ Введите номер заказа", "");
+
+  try {
+    const { data, error } = await db
+      .from("orders")
+      .select("*")
+      .or(`order_id.eq.${id},sku.eq.${id}`)
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return res("rec-res", "err", "❌ Заказ не найден", "Проверьте номер");
+
+    if (data.status !== "SHIPPED") {
+      return res("rec-res", "info", "ℹ️ Уже принят",
+        `Текущий статус: ${esc(data.status)}${data.cell ? ` · Ячейка: ${esc(data.cell)}` : ""}`);
+    }
+
+    curOrder = data;
+    res("rec-res", "ok", "✅ Заказ найден",
+      `Клиент: ${esc(data.client_name || "—")}<br>Товар: ${esc(data.sku || "—")}`);
+    document.getElementById("rec-step2").style.display = "block";
+    document.getElementById("rec-cell").focus();
+  } catch (err) {
+    res("rec-res", "err", "❌ Ошибка", esc(err.message));
+  }
+}
+
+async function doRec() {
+  const cell = document.getElementById("rec-cell").value.trim();
+  if (!cell) return tg.showAlert("Укажите ячейку!");
+  if (!curOrder) return tg.showAlert("Сначала найдите заказ");
+
+  const btn = document.getElementById("btn-do-rec");
+  btn.disabled = true; btn.textContent = "Сохраняю...";
+
+  try {
+    const { data, error } = await db
+      .from("orders")
+      .update({
+        status: "ARRIVED_AT_PVZ",
+        cell,
+        arrived_at: new Date().toISOString()
+      })
+      .eq("order_id", curOrder.order_id)
+      .eq("status", "SHIPPED")  // защита от двойной приёмки
+      .select();
+
+    if (error) throw error;
+    if (!data || !data.length) {
+      throw new Error("Заказ изменился на сервере. Обновите страницу.");
+    }
+
+    haptic("success");
+    nav("scr-main");
+    tg.showAlert(`✅ Принято в ячейку ${cell}`);
+  } catch (err) {
+    haptic("error");
+    res("rec-res", "err", "❌ Ошибка сохранения", esc(err.message));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "✅ Принять и сохранить";
+  }
+}
+
+// ════════════════════════════════════════════════
+// ВЫДАЧА (точечный SELECT + защита от двойной выдачи)
+// ════════════════════════════════════════════════
+async function findIss() {
+  const id = document.getElementById("iss-id").value.trim();
+  if (!id) return res("iss-res", "err", "❌ Введите номер заказа", "");
+
+  try {
+    const { data, error } = await db
+      .from("orders")
+      .select("*")
+      .or(`order_id.eq.${id},sku.eq.${id}`)
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return res("iss-res", "err", "❌ Заказ не найден", "");
+
+    if (data.status !== "ARRIVED_AT_PVZ") {
+      return res("iss-res", "err", "❌ Не готов к выдаче",
+        `Статус: ${esc(data.status)}`);
+    }
+
+    curOrder = data;
+    res("iss-res", "info", "✅ Найден на складе",
+      `Клиент: ${esc(data.client_name || "—")}`);
+    document.getElementById("iss-cell-val").textContent = data.cell || "???";
+    document.getElementById("iss-confirm").style.display = "block";
+  } catch (err) {
+    res("iss-res", "err", "❌ Ошибка", esc(err.message));
+  }
+}
+
+async function doIss() {
+  if (!curOrder) return;
+
+  const btn = document.getElementById("btn-do-iss");
+  btn.disabled = true; btn.textContent = "Сохраняю...";
+
+  try {
+    const { data, error } = await db
+      .from("orders")
+      .update({
+        status: "COMPLETED",
+        issued_at: new Date().toISOString()
+      })
+      .eq("order_id", curOrder.order_id)
+      .eq("status", "ARRIVED_AT_PVZ")  // защита от двойной выдачи
+      .select();
+
+    if (error) throw error;
+    if (!data || !data.length) {
+      throw new Error("Заказ уже выдан другим оператором или изменился");
+    }
+
+    haptic("success");
+    nav("scr-main");
+    tg.showAlert("✅ Выдано клиенту!");
+  } catch (err) {
+    haptic("error");
+    res("iss-res", "err", "❌ Ошибка", esc(err.message));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "✅ Подтвердить выдачу";
+  }
+}
+
+// ════════════════════════════════════════════════
+// ВОЗВРАТ
+// ════════════════════════════════════════════════
+async function checkRet() {
+  const id = document.getElementById("ret-id").value.trim();
+  if (!id) return res("ret-res", "err", "❌ Введите номер заказа", "");
+
+  try {
+    const { data, error } = await db
+      .from("orders")
+      .select("*")
+      .or(`order_id.eq.${id},sku.eq.${id}`)
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return res("ret-res", "err", "❌ Заказ не найден", "");
+
+    if (data.status === "RETURNED") {
+      return res("ret-res", "info", "ℹ️ Возврат уже оформлен",
+        `Причина: ${esc(data.return_reason || "—")}`);
+    }
+
+    curOrder = data;
+    res("ret-res", "info", "✅ Заказ найден",
+      `Клиент: ${esc(data.client_name || "—")}`);
+    document.getElementById("ret-step2").style.display = "block";
+  } catch (err) {
+    res("ret-res", "err", "❌ Ошибка", esc(err.message));
+  }
+}
+
+function selRet(reason, btn) {
+  curRetReason = reason;
+  document.querySelectorAll(".reason-btn").forEach(b => b.classList.remove("selected"));
+  btn.classList.add("selected");
+}
+
+async function doRet() {
+  if (!curRetReason) return tg.showAlert("Выберите причину!");
+  if (!curOrder) return;
+
+  const btn = document.getElementById("btn-do-ret");
+  btn.disabled = true; btn.textContent = "Сохраняю...";
+
+  try {
+    const { data, error } = await db
+      .from("orders")
+      .update({
+        status: "RETURNED",
+        return_reason: curRetReason,
+        returned_at: new Date().toISOString()
+      })
+      .eq("order_id", curOrder.order_id)
+      .neq("status", "RETURNED")        // защита от двойного возврата
+      .select();
+
+    if (error) throw error;
+    if (!data || !data.length) {
+      throw new Error("Возврат уже был оформлен");
+    }
+
+    haptic("warning");
+    nav("scr-main");
+    tg.showAlert("↩️ Возврат оформлен");
+  } catch (err) {
+    haptic("error");
+    res("ret-res", "err", "❌ Ошибка", esc(err.message));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "↩️ Оформить возврат";
+  }
+}
+
+// ════════════════════════════════════════════════
+// СТАТИСТИКА (точечный фильтр на сервере)
+// ════════════════════════════════════════════════
+async function stat(s, btn) {
+  document.querySelectorAll(".stat-tab").forEach(t => t.classList.remove("active"));
+  btn.classList.add("active");
+
+  const list = document.getElementById("stat-list");
+  list.innerHTML = '<div class="loading"><div class="spinner"></div>Загрузка...</div>';
+
+  try {
+    const { data, error } = await db
+      .from("orders")
+      .select("order_id, client_name, sku, cell, return_reason, created_at")
+      .eq("status", s)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (error) throw error;
+
+    if (!data || !data.length) {
+      list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--tg-hint)">📭<br>Пусто</div>';
+      return;
+    }
+
+    list.innerHTML = data.map(o => `
+      <div class="order-item">
+        <div class="order-item-head">
+          <span>${esc(o.order_id)}</span>
+          <span style="color:var(--blue)">${esc(o.cell || "")}</span>
+        </div>
+        <div class="order-item-sub">${esc(o.client_name || "—")} · ${esc(o.sku || "—")}</div>
+        ${o.return_reason ? `<div class="order-item-sub" style="color:var(--red)">${esc(o.return_reason)}</div>` : ""}
+      </div>
+    `).join("");
+  } catch (err) {
+    list.innerHTML = `<div class="auth-error"><p>Ошибка: ${esc(err.message)}</p></div>`;
+  }
+}
+
+// ════════════════════════════════════════════════
+// СТАРТ
+// ════════════════════════════════════════════════
+init();
+</script>
 </body>
 </html>

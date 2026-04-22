@@ -257,6 +257,10 @@
         tg.expand();
         tg.ready();
         tg.BackButton.onClick(() => nav('scr-main'));
+        if (tg.disableVerticalSwipes) tg.disableVerticalSwipes(); // Защита от закрытия
+        if (tg.requestFullscreen) tg.requestFullscreen();       // Максимальный экран
+
+    
 
         // КЛЮЧИ SUPABASE
         const S_URL = "https://ysvogudznyuszssdriih.supabase.co";

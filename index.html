@@ -16,1201 +16,196 @@
       --tg-second:   var(--tg-theme-secondary-bg-color, #f4f4f5);
       --radius: 12px;
       --green:  #34c759;
-      --red:    #ff3b30;
-      --orange: #ff9500;
       --blue:   #007aff;
-      --safe-top:    env(safe-area-inset-top);
-      --safe-bottom: env(safe-area-inset-bottom);
-      --safe-left:   env(safe-area-inset-left);
-      --safe-right:  env(safe-area-inset-right);
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--tg-bg); color: var(--tg-text); font-size: 16px;
-      min-height: 100vh; padding-bottom: var(--safe-bottom);
+      font-family: -apple-system, system-ui, sans-serif;
+      background: var(--tg-second); color: var(--tg-text);
+      margin: 0; padding: 0; user-select: none;
     }
-
-    /* ── Шапка ───────────────────────────────────────────────── */
     .header {
-      position: sticky; top: 0; z-index: 10;
-      padding-top: calc(14px + var(--safe-top));
-      padding-bottom: 12px;
-      padding-left: calc(16px + var(--safe-left));
-      padding-right: calc(16px + var(--safe-right));
-      background: var(--tg-second);
-      box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+      background: var(--tg-bg); padding: 16px 20px;
+      position: sticky; top: 0; z-index: 100;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
-    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .header h1 { font-size: 17px; font-weight: 700; }
-    .operator-name { font-size: 13px; color: var(--tg-hint); }
-
-    .mini-dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .dash-card { background: var(--tg-bg); padding: 10px 12px; border-radius: 10px;
-                 font-size: 11px; display: flex; justify-content: space-between; align-items: center; }
-    .dash-card b { font-size: 14px; }
-
-    .aging-row { grid-column: span 2; display: flex; gap: 4px; margin-top: 4px;
-                 padding: 8px; background: var(--tg-bg); border-radius: 8px; }
-    .age-dot { flex: 1; text-align: center; font-size: 9px; color: var(--tg-hint); }
-    .age-dot b { display: block; font-size: 12px; color: var(--tg-text); margin-bottom: 2px; }
-    .age-dot.danger b { color: var(--red); }
-
-    /* ── Экраны ──────────────────────────────────────────────── */
-    .screen {
-      display: none;
-      padding: 16px calc(16px + var(--safe-right)) 16px calc(16px + var(--safe-left));
-      min-height: 60vh;
-    }
+    .header h1 { font-size: 18px; margin: 0; font-weight: 800; }
+    
+    .screen { display: none; padding: 16px; animation: fadeIn 0.2s ease; }
     .screen.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* ── Меню ────────────────────────────────────────────────── */
-    .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-    .menu-card {
-      background: var(--tg-second); border-radius: var(--radius);
-      padding: 24px 16px; text-align: center; cursor: pointer;
-      transition: transform 0.1s; border: 2px solid transparent;
-      user-select: none; min-height: 108px;
-      display: flex; flex-direction: column; justify-content: center;
-    }
-    .menu-card:active { transform: scale(0.97); }
-    .menu-card.accent { border-color: var(--tg-btn); }
-    .menu-card .icon { font-size: 32px; margin-bottom: 8px; }
-    .menu-card .label { font-size: 14px; font-weight: 600; }
-    .menu-card .badge {
-      display: inline-block; margin-top: 6px;
-      background: var(--red); color: #fff;
-      padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;
+    /* Поиск */
+    .search-container { position: sticky; top: 60px; background: var(--tg-second); padding: 10px 0; z-index: 90; }
+    .search-input {
+      width: 100%; padding: 12px 16px; border-radius: var(--radius);
+      border: 1px solid rgba(0,0,0,0.1); background: var(--tg-bg);
+      color: var(--tg-text); font-size: 16px; box-sizing: border-box; outline: none;
     }
 
-    /* ── Формы ───────────────────────────────────────────────── */
-    .form-section { background: var(--tg-second); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
-    .form-section h3 { font-size: 13px; font-weight: 700; color: var(--tg-hint);
-                       text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
-
-    .input-row { display: flex; gap: 8px; margin-bottom: 12px; }
-    .field-input {
-      flex: 1; min-width: 0; background: var(--tg-bg);
-      border: 1.5px solid rgba(0,0,0,0.1); border-radius: 10px;
-      padding: 12px; font-size: 17px; color: var(--tg-text);
-      outline: none; min-height: 48px;
+    /* Карточки ПВЗ */
+    .pvz-card {
+      background: var(--tg-bg); padding: 16px; border-radius: var(--radius);
+      margin-bottom: 10px; border: 1px solid transparent;
+      transition: all 0.2s; cursor: pointer;
     }
-    .field-input:focus { border-color: var(--tg-btn); }
+    .pvz-card:active { transform: scale(0.98); background: var(--tg-second); }
+    .pvz-code { font-weight: 800; color: var(--tg-btn); font-size: 17px; margin-bottom: 4px; }
+    .pvz-addr { font-size: 13px; color: var(--tg-hint); line-height: 1.4; }
 
-    .cam-btn {
-      width: 48px; height: 48px; flex-shrink: 0;
-      background: var(--tg-btn); color: white; border: none;
-      border-radius: 10px; font-size: 20px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-    }
-
-    .btn {
-      width: 100%; padding: 14px; min-height: 48px;
-      background: var(--tg-btn); color: var(--tg-btn-text);
-      border: none; border-radius: var(--radius);
-      font-size: 16px; font-weight: 600; cursor: pointer;
-    }
-    .btn:disabled { opacity: 0.5; cursor: default; }
-    .btn.secondary { background: var(--tg-second); color: var(--tg-text); }
-    .btn.danger    { background: var(--red); color: #fff; }
-    .btn.success   { background: var(--green); color: #fff; }
-
-    /* ── Результаты ──────────────────────────────────────────── */
-    .result-card { border-radius: var(--radius); padding: 16px; margin-bottom: 16px; display: none; }
-    .result-card.visible { display: block; }
-    .result-card.ok   { background: #e8f5e9; border: 1.5px solid var(--green); }
-    .result-card.err  { background: #fce8e8; border: 1.5px solid var(--red); }
-    .result-card.info { background: #e3f2fd; border: 1.5px solid var(--blue); }
-    .rc-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
-    .rc-body  { font-size: 14px; opacity: 0.8; }
-
-    /* ── Большая ячейка ──────────────────────────────────────── */
-    .big-cell-display {
-      font-size: 42px; font-weight: 800; color: var(--blue);
-      text-align: center; padding: 20px 0; letter-spacing: 2px;
-    }
-
-    /* ── Причины возврата ────────────────────────────────────── */
-    .reason-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-    .reason-btn {
-      padding: 14px; background: var(--tg-bg);
-      border: 1.5px solid rgba(0,0,0,0.1); border-radius: 10px;
-      text-align: left; font-size: 15px; cursor: pointer; color: var(--tg-text);
-    }
-    .reason-btn.selected { border-color: var(--tg-btn); background: rgba(112,0,255,0.05); }
-
-    /* ── Список заказов ──────────────────────────────────────── */
+    /* Заказы */
     .order-item {
-      background: var(--tg-second); border-radius: 10px; padding: 14px;
-      margin-bottom: 8px; cursor: pointer;
+      background: var(--tg-bg); padding: 16px; border-radius: var(--radius);
+      margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     .order-item-head { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 4px; }
-    .order-item-sub  { font-size: 12px; color: var(--tg-hint); margin-top: 2px; }
+    .order-item-sub { font-size: 13px; color: var(--tg-hint); }
 
-    /* ── Позиции на сборке ───────────────────────────────────── */
-    .pick-item {
-      background: var(--tg-second); border-radius: 10px; padding: 14px;
-      margin-bottom: 8px; border-left: 5px solid var(--blue);
-    }
-    .pick-item.done { border-left-color: var(--green); opacity: 0.6; }
-    .pick-item.no-cell { border-left-color: var(--red); }
-    .pick-item-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-    .pick-cell { font-size: 18px; font-weight: 800; color: var(--blue); }
-    .pick-cell.no-cell { color: var(--red); }
-    .pick-name { font-size: 14px; margin-top: 4px; }
-    .pick-meta { font-size: 12px; color: var(--tg-hint); }
-    .pick-qty { font-size: 20px; font-weight: 700; white-space: nowrap; }
-
-    /* ── Tabs ────────────────────────────────────────────────── */
-    .stat-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; }
-    .stat-tab {
-      padding: 8px 16px; background: var(--tg-second); border-radius: 20px;
-      font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer;
-    }
-    .stat-tab.active { background: var(--tg-btn); color: #fff; }
-
-    /* ── Онбординг ───────────────────────────────────────────── */
-    .onboard-hero { text-align: center; padding: 32px 0; }
-    .onboard-hero .icon { font-size: 64px; margin-bottom: 12px; }
-    .onboard-hero h2    { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-    .onboard-hero p     { color: var(--tg-hint); font-size: 14px; }
-    .pvz-list { max-height: 50vh; overflow-y: auto; margin-top: 16px; }
-    .pvz-item {
-      padding: 14px 16px; background: var(--tg-second); border-radius: 10px;
-      margin-bottom: 6px; cursor: pointer; font-size: 16px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .pvz-item:active { background: rgba(112,0,255,0.1); }
-    .pvz-item .arrow { color: var(--tg-hint); }
-
-    /* ── Загрузка/ошибка ─────────────────────────────────────── */
-    .loading {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; min-height: 70vh; color: var(--tg-hint);
-    }
-    .spinner {
-      width: 36px; height: 36px; margin-bottom: 12px;
-      border: 3px solid var(--tg-second); border-top-color: var(--tg-btn);
-      border-radius: 50%; animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .auth-error { padding: 32px; text-align: center; }
-    .auth-error .icon { font-size: 48px; margin-bottom: 12px; }
-    .auth-error h2    { color: var(--red); font-size: 18px; margin-bottom: 8px; }
-    .auth-error p     { color: var(--tg-hint); font-size: 14px; }
-
-    .empty-state {
-      text-align: center; padding: 40px 20px; color: var(--tg-hint);
-    }
-    .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+    .btn-reset { font-size: 12px; padding: 6px 12px; border-radius: 8px; border: none; background: #eee; cursor: pointer; }
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--tg-hint); }
   </style>
 </head>
 <body>
 
-<!-- ═════════════ ЗАГРУЗКА ═════════════ -->
-<div id="scr-loading" class="loading">
-  <div class="spinner"></div>
-  <div>Авторизация...</div>
+<div class="header">
+  <h1 id="header-title">UZUM WMS</h1>
+  <button id="btn-change-pvz" class="btn-reset" style="display:none;" onclick="resetPvz()">Сменить ПВЗ</button>
 </div>
 
-<!-- ═════════════ ОНБОРДИНГ ═════════════ -->
-<div id="scr-onboard" class="screen">
-  <div class="onboard-hero">
-    <div class="icon">📦</div>
-    <h2>Добро пожаловать!</h2>
-    <p>Выберите свой пункт выдачи.<br>Изменить потом можно только через администратора.</p>
+<div id="scr-select" class="screen">
+  <div class="search-container">
+    <input type="text" id="pvz-search" class="search-input" placeholder="Поиск ПВЗ (номер или адрес)..." oninput="filterPvz()">
   </div>
-  <div class="form-section">
-    <input type="text" class="field-input" id="onb-search"
-           placeholder="🔍 Поиск ПВЗ" oninput="filterOnboardPvz(this.value)" inputmode="search">
-  </div>
-  <div class="pvz-list" id="onb-list">
-    <div class="loading"><div class="spinner"></div>Загрузка списка...</div>
-  </div>
+  <div id="pvz-list"></div>
 </div>
 
-<!-- ═════════════ ОШИБКА ═════════════ -->
-<div id="scr-auth-error" class="screen">
-  <div class="auth-error">
-    <div class="icon">⛔</div>
-    <h2 id="ae-title">Ошибка</h2>
-    <p id="ae-text">—</p>
-    <button class="btn" style="margin-top:24px" onclick="location.reload()">Попробовать снова</button>
-  </div>
-</div>
-
-<!-- ═════════════ APP ═════════════ -->
-<div id="app" style="display:none">
-
-  <div class="header">
-    <div class="header-top">
-      <h1 id="h-title">—</h1>
-      <div class="operator-name" id="h-user">👤 —</div>
-    </div>
-    <div class="mini-dashboard" id="h-dash">
-      <!-- заполняется рендером в зависимости от роли -->
-    </div>
-  </div>
-
-  <!-- ═══ Главное меню ═══ -->
-  <div id="scr-main" class="screen active">
-    <div class="menu-grid" id="main-menu">
-      <!-- Собирается динамически из buildMenu() -->
-    </div>
-  </div>
-
-  <!-- ═══ СКЛАД: Список заказов на сборку ═══ -->
-  <div id="scr-picklist" class="screen">
-    <h3 style="font-size:13px;color:var(--tg-hint);text-transform:uppercase;margin-bottom:12px">
-      Заказы для сборки
-    </h3>
-    <div id="picklist-list"><div class="loading"><div class="spinner"></div>Загрузка...</div></div>
-  </div>
-
-  <!-- ═══ СКЛАД: Процесс сборки одного заказа ═══ -->
-  <div id="scr-pick" class="screen">
-    <div id="pick-header" class="form-section" style="background:var(--tg-btn);color:#fff">
-      <div style="font-size:12px;opacity:0.9">Заказ</div>
-      <div id="pick-order-title" style="font-size:20px;font-weight:800">—</div>
-      <div id="pick-progress" style="font-size:13px;margin-top:4px;opacity:0.9">—</div>
-    </div>
-    <div class="form-section">
-      <h3>Сканировать ШК товара</h3>
-      <div class="input-row">
-        <input type="text" id="pick-sku" class="field-input" placeholder="SKU товара">
-        <button class="cam-btn" onclick="scan('pick-sku', onPickScan)">📷</button>
-      </div>
-      <button class="btn" onclick="onPickScan()">Проверить</button>
-    </div>
-    <div id="pick-res" class="result-card"></div>
-    <div id="pick-items"></div>
-  </div>
-
-  <!-- ═══ ПВЗ: Приёмка ═══ -->
-  <div id="scr-rec" class="screen">
-    <div class="form-section">
-      <h3>Шаг 1 — Номер заказа</h3>
-      <div class="input-row">
-        <input type="text" id="rec-id" class="field-input" placeholder="Сканируйте или введите" inputmode="numeric">
-        <button class="cam-btn" onclick="scan('rec-id', checkRec)">📷</button>
-      </div>
-      <button class="btn" onclick="checkRec()">Проверить</button>
-    </div>
-    <div id="rec-res" class="result-card"></div>
-    <div id="rec-step2" style="display:none">
-      <div class="form-section">
-        <h3>Шаг 2 — Размещение</h3>
-        <input type="text" id="rec-cell" class="field-input"
-               placeholder="Ячейка (напр. А-12)" style="margin-bottom:12px">
-        <button class="btn success" id="btn-do-rec" onclick="doRec()">✅ Принять</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ ПВЗ: Выдача ═══ -->
-  <div id="scr-iss" class="screen">
-    <div class="form-section">
-      <h3>Поиск заказа клиента</h3>
-      <div class="input-row">
-        <input type="text" id="iss-id" class="field-input" placeholder="Номер заказа" inputmode="numeric">
-        <button class="cam-btn" onclick="scan('iss-id', findIss)">📷</button>
-      </div>
-      <button class="btn" onclick="findIss()">Найти</button>
-    </div>
-    <div id="iss-res" class="result-card"></div>
-    <div id="iss-confirm" style="display:none">
-      <div class="form-section">
-        <h3>Заказ на полке:</h3>
-        <div class="big-cell-display" id="iss-cell-val">—</div>
-        <button class="btn success" id="btn-do-iss" onclick="doIss()">✅ Подтвердить выдачу</button>
-        <button class="btn secondary" style="margin-top:8px" onclick="nav('scr-main')">Отмена</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ ПВЗ: Возврат ═══ -->
-  <div id="scr-ret" class="screen">
-    <div class="form-section">
-      <h3>Оформление возврата</h3>
-      <div class="input-row">
-        <input type="text" id="ret-id" class="field-input" placeholder="Номер заказа" inputmode="numeric">
-        <button class="cam-btn" onclick="scan('ret-id', checkRet)">📷</button>
-      </div>
-      <button class="btn" onclick="checkRet()">Найти</button>
-    </div>
-    <div id="ret-res" class="result-card"></div>
-    <div id="ret-step2" style="display:none">
-      <div class="form-section">
-        <h3>Причина возврата</h3>
-        <div class="reason-list">
-          <button class="reason-btn" onclick="selRet('Не тот товар', this)">Не тот товар</button>
-          <button class="reason-btn" onclick="selRet('Брак / Повреждение', this)">Брак / Повреждение</button>
-          <button class="reason-btn" onclick="selRet('Не хватает товара', this)">Не хватает товара</button>
-          <button class="reason-btn" onclick="selRet('Отказ клиента', this)">Отказ клиента</button>
-        </div>
-        <button class="btn danger" id="btn-do-ret" style="margin-top:16px" onclick="doRet()">↩️ Оформить</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ Статистика ═══ -->
-  <div id="scr-stat" class="screen">
-    <div class="stat-tabs" id="stat-tabs"></div>
-    <div id="stat-list"></div>
-  </div>
-
+<div id="scr-orders" class="screen">
+  <div id="order-list-cont"></div>
 </div>
 
 <script>
-// ════════════════════════════════════════════════
-// КОНФИГ
-// ════════════════════════════════════════════════
-const S_URL = "https://ysvogudznyuszssdriih.supabase.co";
-const S_KEY = "sb_publishable_kU91fqnkt80hbLcVEms6oA_eXKVzY2A";
+  const tg = window.Telegram.WebApp;
+  tg.expand();
 
-// ════════════════════════════════════════════════
-// СОСТОЯНИЕ
-// ════════════════════════════════════════════════
-const tg = window.Telegram.WebApp;
-tg.ready();
-tg.expand();
-tg.disableVerticalSwipes?.();
+  const S_URL = "https://ysvogudznyuszssdriih.supabase.co";
+  const S_KEY = "sb_publishable_kU91fqnkt80hbLcVEms6oA_eXKVzY2A";
+  const db = window.supabase.createClient(S_URL, S_KEY);
 
-function applySafeArea() {
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const hasNotch = window.screen.height >= 812 || window.screen.width >= 812;
-  if (isIOS && hasNotch) {
-    document.documentElement.style.setProperty("--safe-top", "max(env(safe-area-inset-top), 44px)");
-  }
-}
-applySafeArea();
-tg.onEvent?.("viewportChanged", applySafeArea);
+  let allBranches = [];
+  let selectedPvz = localStorage.getItem('my_pvz_code');
 
-let db = null;
-let me = null;
-let curOrder = null;
-let curRetReason = "";
-let curPickOrder = null;
-let curPickItems = [];
-let allPvz = [];
+  const esc = (s) => String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]));
 
-// ════════════════════════════════════════════════
-// УТИЛИТЫ
-// ════════════════════════════════════════════════
-function esc(s) {
-  return String(s ?? "")
-    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
-}
-
-function showScreen(id) {
-  ["scr-loading","scr-onboard","scr-auth-error","app"].forEach(s => {
-    const el = document.getElementById(s);
-    if (el) el.style.display = "none";
-  });
-  const el = document.getElementById(id);
-  if (!el) return;
-
-  if (id === "app") {
-    el.style.display = "block";
-    document.querySelectorAll("#app .screen").forEach(s => s.classList.remove("active"));
-    document.getElementById("scr-main").classList.add("active");
-  } else {
-    el.style.display = "block";
-    el.classList.add("active");
-  }
-}
-
-function showAuthError(text) {
-  document.getElementById("ae-text").textContent = text || "Не удалось войти";
-  showScreen("scr-auth-error");
-}
-
-function res(id, type, t, b) {
-  const el = document.getElementById(id);
-  el.className = `result-card visible ${type}`;
-  el.innerHTML = `<div class="rc-title">${esc(t)}</div><div class="rc-body">${b || ""}</div>`;
-}
-
-function haptic(type) {
-  try { tg.HapticFeedback?.notificationOccurred?.(type); } catch {}
-}
-
-function hapticTap() {
-  try { tg.HapticFeedback?.impactOccurred?.("light"); } catch {}
-}
-
-function scan(inpId, cb) {
-  if (!tg.showScanQrPopup) {
-    tg.showAlert("Сканер недоступен. Введите вручную.");
-    return;
-  }
-  tg.showScanQrPopup({ text: "Сканируйте ШК" }, (txt) => {
-    if (txt) {
-      document.getElementById(inpId).value = txt.trim();
-      cb();
-    }
-    return true;
-  });
-}
-
-// ════════════════════════════════════════════════
-// АВТОРИЗАЦИЯ
-// ════════════════════════════════════════════════
-async function authRequest(extra) {
-  const body = { initData: tg.initData, ...(extra || {}) };
-  const resp = await fetch(`${S_URL}/functions/v1/auth`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  });
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err.error || `HTTP ${resp.status}`);
-  }
-  return await resp.json();
-}
-
-async function init() {
-  try {
-    if (!tg.initData) {
-      showAuthError("Откройте приложение через Telegram бота");
-      return;
-    }
-    const result = await authRequest();
-
-    if (result.needs_onboarding) {
-      me = { tg_id: result.tg_id, name: result.name };
-      showOnboarding();
-      return;
-    }
-
-    me = result;
-    initSupabaseClient(result.token);
-    showApp();
-  } catch (err) {
-    console.error("Auth error:", err);
-    showAuthError(err.message);
-  }
-}
-
-function initSupabaseClient(token) {
-  db = window.supabase.createClient(S_URL, S_KEY, {
-    global: { headers: { Authorization: `Bearer ${token}` } }
-  });
-}
-
-// ════════════════════════════════════════════════
-// ОНБОРДИНГ
-// ════════════════════════════════════════════════
-async function showOnboarding() {
-  showScreen("scr-onboard");
-  try {
-    const tempDb = window.supabase.createClient(S_URL, S_KEY);
-    const { data, error } = await tempDb.from("pvz").select("code, name").order("code");
-    if (error) throw error;
-    allPvz = data || [];
-    renderOnboardPvz(allPvz);
-  } catch (err) {
-    document.getElementById("onb-list").innerHTML =
-      `<div class="auth-error"><div class="icon">⚠️</div>
-       <p>Ошибка загрузки: ${esc(err.message)}</p></div>`;
-  }
-}
-
-function filterOnboardPvz(q) {
-  const query = q.toLowerCase().trim();
-  const filtered = !query ? allPvz : allPvz.filter(p =>
-    p.code.toLowerCase().includes(query) || (p.name || "").toLowerCase().includes(query)
-  );
-  renderOnboardPvz(filtered);
-}
-
-function renderOnboardPvz(list) {
-  const el = document.getElementById("onb-list");
-  if (!list.length) {
-    el.innerHTML = '<div class="empty-state">Ничего не найдено</div>';
-    return;
-  }
-  el.innerHTML = list.map(p => `
-    <div class="pvz-item" onclick="selectPvz('${esc(p.code)}', '${esc(p.name || "")}')">
-      <div>
-        <div style="font-weight:600">${esc(p.code)}</div>
-        ${p.name ? `<div style="font-size:12px;color:var(--tg-hint)">${esc(p.name)}</div>` : ''}
-      </div>
-      <div class="arrow">›</div>
-    </div>
-  `).join("");
-}
-
-async function selectPvz(code, name) {
-  tg.showPopup({
-    title: "Подтверждение",
-    message: `ПВЗ: ${code}\n${name ? name + '\n\n' : '\n'}Изменить можно только через админа. Продолжить?`,
-    buttons: [
-      { id: "ok", type: "default", text: "Да" },
-      { id: "cancel", type: "cancel" }
-    ]
-  }, async (btnId) => {
-    if (btnId !== "ok") return;
-    try {
-      haptic("warning");
-      const result = await authRequest({ register_pvz: code });
-      me = result;
-      initSupabaseClient(result.token);
-      haptic("success");
-      showApp();
-    } catch (err) {
-      tg.showAlert("Ошибка: " + err.message);
-    }
-  });
-}
-
-// ════════════════════════════════════════════════
-// ГЛАВНОЕ ПРИЛОЖЕНИЕ
-// ════════════════════════════════════════════════
-function showApp() {
-  showScreen("app");
-
-  document.getElementById("h-user").innerHTML = `👤 <b>${esc(me.name)}</b>`;
-  const titleEl = document.getElementById("h-title");
-
-  if      (me.role === "admin") titleEl.textContent = "🛡 Администратор";
-  else if (me.role === "ru")    titleEl.textContent = "🌍 Регион";
-  else if (me.role === "tu")    titleEl.textContent = "📊 ТУ";
-  else if (me.role === "sklad") titleEl.textContent = "🏭 Склад";
-  else                          titleEl.textContent = me.pvz_code || "—";
-
-  tg.BackButton.onClick(() => nav("scr-main"));
-
-  buildMenu();
-  buildDashboard();
-  buildStatTabs();
-  loadDashboard();
-}
-
-// ── Сборка меню в зависимости от роли ───────────────────────────────────
-function buildMenu() {
-  const el = document.getElementById("main-menu");
-  const role = me.role;
-  const cards = [];
-
-  // Склад и админ видят Сборку
-  if (role === "sklad" || role === "admin") {
-    cards.push({
-      action: () => nav("scr-picklist"),
-      icon: "🏭", label: "Сборка",
-      accent: true,
-      badgeId: "badge-picklist"
-    });
-  }
-
-  // Оператор ПВЗ, ТУ, РУ, админ видят ПВЗ-операции
-  if (role === "operator" || role === "tu" || role === "ru" || role === "admin") {
-    cards.push(
-      { action: () => nav("scr-rec"), icon: "📥", label: "Приёмка", accent: role === "operator" },
-      { action: () => nav("scr-iss"), icon: "📤", label: "Выдача" },
-      { action: () => nav("scr-ret"), icon: "↩️", label: "Возврат" },
-    );
-  }
-
-  // Статистику видят все
-  cards.push({ action: () => nav("scr-stat"), icon: "📊", label: "Статистика" });
-
-  el.innerHTML = cards.map((c, i) => `
-    <div class="menu-card ${c.accent ? 'accent' : ''}" onclick="menuClick(${i})">
-      <div class="icon">${c.icon}</div>
-      <div class="label">${c.label}</div>
-      ${c.badgeId ? `<span id="${c.badgeId}" class="badge" style="display:none">0</span>` : ''}
-    </div>
-  `).join("");
-
-  window._menuActions = cards.map(c => c.action);
-}
-window.menuClick = (i) => { hapticTap(); window._menuActions[i](); };
-
-// ── Дашборд в зависимости от роли ────────────────────────────────────────
-function buildDashboard() {
-  const el = document.getElementById("h-dash");
-  const role = me.role;
-
-  if (role === "sklad") {
-    el.innerHTML = `
-      <div class="dash-card"><span>📦 Ждут сборки</span><b id="d-new">0</b></div>
-      <div class="dash-card"><span>🚚 Готовы</span><b id="d-assembled">0</b></div>
-    `;
-  } else {
-    el.innerHTML = `
-      <div class="dash-card"><span>🚚 В пути</span><b id="d-shipped">0</b></div>
-      <div class="dash-card"><span>📦 На складе</span><b id="d-arrived">0</b></div>
-      <div class="aging-row">
-        <div class="age-dot"><b id="a-1">0</b>до 1д</div>
-        <div class="age-dot"><b id="a-3">0</b>1–3д</div>
-        <div class="age-dot"><b id="a-5">0</b>3–5д</div>
-        <div class="age-dot"><b id="a-7">0</b>5–7д</div>
-        <div class="age-dot danger"><b id="a-max">0</b>&gt;7д</div>
-      </div>
-    `;
-  }
-}
-
-// ── Табы статистики в зависимости от роли ──────────────────────────────
-function buildStatTabs() {
-  const el = document.getElementById("stat-tabs");
-  const role = me.role;
-  let tabs;
-
-  if (role === "sklad") {
-    tabs = [
-      ["NEW",        "Ждут сборки"],
-      ["ASSEMBLING", "Собираются"],
-      ["ASSEMBLED",  "Собраны"],
-      ["SHIPPED",    "Отгружены"],
-    ];
-  } else {
-    tabs = [
-      ["ARRIVED_AT_PVZ", "На складе"],
-      ["SHIPPED",        "В пути"],
-      ["COMPLETED",      "Выданы"],
-      ["RETURNED",       "Возврат"],
-    ];
-  }
-
-  el.innerHTML = tabs.map(([status, label], i) =>
-    `<div class="stat-tab ${i === 0 ? 'active' : ''}" onclick="stat('${status}', this)">${label}</div>`
-  ).join("");
-  // Авто-выбор первого таба при входе
-  window._firstStatStatus = tabs[0][0];
-}
-
-// ════════════════════════════════════════════════
-// ДАШБОРД
-// ════════════════════════════════════════════════
-async function loadDashboard() {
-  try {
-    if (me.role === "sklad") {
-      // Склад — считаем NEW и ASSEMBLED
-      const { data } = await db.from("customer_orders")
-        .select("status").in("status", ["NEW", "ASSEMBLED"]);
-      const arr = data || [];
-      const nNew = arr.filter(o => o.status === "NEW").length;
-      const nReady = arr.filter(o => o.status === "ASSEMBLED").length;
-      document.getElementById("d-new").textContent = nNew;
-      document.getElementById("d-assembled").textContent = nReady;
-
-      const badge = document.getElementById("badge-picklist");
-      if (badge) {
-        badge.textContent = nNew;
-        badge.style.display = nNew > 0 ? "inline-block" : "none";
-      }
+  async function init() {
+    if (!selectedPvz) {
+      showScreen('select');
+      await loadBranches();
     } else {
-      // ПВЗ — SHIPPED + ARRIVED_AT_PVZ
-      const { data } = await db.from("customer_orders")
-        .select("status, created_at").in("status", ["SHIPPED", "ARRIVED_AT_PVZ"]);
-      const now = Date.now();
-      let shipped = 0, arrived = 0, a1=0, a3=0, a5=0, a7=0, aMax=0;
-      (data || []).forEach(o => {
-        if (o.status === "SHIPPED") shipped++;
-        else if (o.status === "ARRIVED_AT_PVZ") {
-          arrived++;
-          const days = Math.floor((now - new Date(o.created_at).getTime()) / 86400000);
-          if      (days <= 1) a1++;
-          else if (days <= 3) a3++;
-          else if (days <= 5) a5++;
-          else if (days <= 7) a7++;
-          else                aMax++;
-        }
-      });
-      document.getElementById("d-shipped").textContent = shipped;
-      document.getElementById("d-arrived").textContent = arrived;
-      document.getElementById("a-1").textContent   = a1;
-      document.getElementById("a-3").textContent   = a3;
-      document.getElementById("a-5").textContent   = a5;
-      document.getElementById("a-7").textContent   = a7;
-      document.getElementById("a-max").textContent = aMax;
+      showOrders();
     }
-  } catch (err) {
-    console.error("Dashboard error:", err);
   }
-}
 
-// ════════════════════════════════════════════════
-// НАВИГАЦИЯ
-// ════════════════════════════════════════════════
-function nav(id) {
-  document.querySelectorAll("#app .screen").forEach(s => s.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-  tg.BackButton[id === "scr-main" ? "hide" : "show"]();
-  hapticTap();
+  async function loadBranches() {
+    const listCont = document.getElementById('pvz-list');
+    listCont.innerHTML = '<div class="empty-state">Загрузка справочника...</div>';
+    
+    const { data, error } = await db.from('branches').select('*');
+    
+    if (error) {
+        listCont.innerHTML = `<div class="empty-state">Ошибка БД: ${error.message}</div>`;
+        return;
+    }
 
-  // Сброс состояний
-  ["rec-step2","iss-confirm","ret-step2"].forEach(i => {
-    const el = document.getElementById(i);
-    if (el) el.style.display = "none";
-  });
-  document.querySelectorAll(".result-card").forEach(r => r.classList.remove("visible"));
-  ["rec-id","rec-cell","iss-id","ret-id","pick-sku"].forEach(i => {
-    const el = document.getElementById(i);
-    if (el) el.value = "";
-  });
-  document.querySelectorAll(".reason-btn").forEach(b => b.classList.remove("selected"));
-  curOrder = null; curRetReason = "";
+    // Обработка данных (на случай если колонки называются ПВЗ или code)
+    allBranches = data.map(b => ({
+      code: b.code || b['ПВЗ'] || '?',
+      address: b.full_address || b['Название филиала'] || 'Адрес не указан',
+      route: b.route_number || b['Маршрут'] || ''
+    }));
 
-  // Специфика экранов
-  if (id === "scr-picklist") loadPicklist();
-  if (id === "scr-stat")     stat(window._firstStatStatus, document.querySelector(".stat-tab"));
-  if (id === "scr-main")     loadDashboard();
+    renderPvzList(allBranches);
+  }
 
-  // Автофокус
-  setTimeout(() => {
-    const f = ({ "scr-rec":"rec-id","scr-iss":"iss-id","scr-ret":"ret-id","scr-pick":"pick-sku" })[id];
-    if (f) document.getElementById(f)?.focus();
-  }, 100);
-}
+  function renderPvzList(list) {
+    const container = document.getElementById('pvz-list');
+    if (!list.length) {
+      container.innerHTML = '<div class="empty-state">ПВЗ не найдены</div>';
+      return;
+    }
+    container.innerHTML = list.map(b => `
+      <div class="pvz-card" onclick="setMyPvz('${esc(b.code)}')">
+        <div class="pvz-code">${esc(b.code)} ${b.route ? `<span style="font-size:12px;opacity:0.5;margin-left:8px;">Маршрут ${b.route}</span>` : ''}</div>
+        <div class="pvz-addr">${esc(b.address)}</div>
+      </div>
+    `).join('');
+  }
 
-// ════════════════════════════════════════════════
-// СКЛАД: СПИСОК ЗАКАЗОВ НА СБОРКУ
-// ════════════════════════════════════════════════
-async function loadPicklist() {
-  const list = document.getElementById("picklist-list");
-  list.innerHTML = '<div class="loading"><div class="spinner"></div>Загрузка...</div>';
+  function filterPvz() {
+    const q = document.getElementById('pvz-search').value.toLowerCase();
+    const filtered = allBranches.filter(b => 
+      b.code.toLowerCase().includes(q) || b.address.toLowerCase().includes(q)
+    );
+    renderPvzList(filtered);
+  }
 
-  try {
-    const { data, error } = await db
-      .from("customer_orders")
-      .select("id, external_id, client_name, pvz_code, route, status, created_at, order_items(sku)")
-      .in("status", ["NEW", "ASSEMBLING"])
-      .order("created_at", { ascending: true });
+  function setMyPvz(code) {
+    localStorage.setItem('my_pvz_code', code);
+    selectedPvz = code;
+    showOrders();
+  }
 
-    if (error) throw error;
-    if (!data || !data.length) {
-      list.innerHTML = `<div class="empty-state"><div class="icon">🎉</div>
-        Нет заказов на сборку</div>`;
+  function resetPvz() {
+    localStorage.removeItem('my_pvz_code');
+    location.reload();
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('scr-' + id).classList.add('active');
+  }
+
+  function showOrders() {
+    document.getElementById('header-title').innerText = `ПВЗ ${selectedPvz}`;
+    document.getElementById('btn-change-pvz').style.display = 'block';
+    showScreen('orders');
+    loadOrders();
+  }
+
+  async function loadOrders() {
+    const cont = document.getElementById('order-list-cont');
+    cont.innerHTML = '<div class="empty-state">Загрузка заказов...</div>';
+
+    // ВАЖНО: Используем branch_name, так как это имя колонки в нашей базе заказов
+    const { data, error } = await db.from('customer_orders')
+      .select('external_id, status, box_id, created_at')
+      .eq('branch_name', selectedPvz)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      cont.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`;
       return;
     }
 
-    list.innerHTML = data.map(o => {
-      const items = (o.order_items || []).length;
-      const isActive = o.status === "ASSEMBLING";
-      return `
-        <div class="order-item" onclick="startPicking('${o.id}','${esc(o.external_id)}')">
-          <div class="order-item-head">
-            <span>📦 Заказ ${esc(o.external_id)}</span>
-            <span style="color:${isActive ? 'var(--orange)' : 'var(--blue)'};font-size:12px">
-              ${isActive ? 'В работе' : 'Новый'}
-            </span>
-          </div>
-          <div class="order-item-sub">${esc(o.client_name || "—")} · ${items} поз. · ${esc(o.pvz_code || "")}</div>
-        </div>
-      `;
-    }).join("");
-  } catch (err) {
-    list.innerHTML = `<div class="auth-error"><p>Ошибка: ${esc(err.message)}</p></div>`;
-  }
-}
-
-// ════════════════════════════════════════════════
-// СКЛАД: СБОРКА ОДНОГО ЗАКАЗА
-// ════════════════════════════════════════════════
-async function startPicking(orderId, externalId) {
-  nav("scr-pick");
-  document.getElementById("pick-order-title").textContent = `№ ${externalId}`;
-
-  try {
-    // Помечаем заказ как ASSEMBLING (если ещё NEW)
-    await db.from("customer_orders")
-      .update({ status: "ASSEMBLING", assembled_by: me.tg_id })
-      .eq("id", orderId)
-      .eq("status", "NEW");
-
-    // Грузим позиции с адресами
-    const { data: items, error } = await db
-      .from("order_items")
-      .select("id, sku, item_name, size, color, qty, picked_qty")
-      .eq("order_id", orderId);
-
-    if (error) throw error;
-
-    // Подгружаем адреса ячеек
-    const skus = [...new Set((items || []).map(i => i.sku))];
-    let stockMap = {};
-    if (skus.length) {
-      const { data: stock } = await db.from("warehouse_stock").select("sku, cell").in("sku", skus);
-      (stock || []).forEach(s => { stockMap[s.sku] = s.cell; });
+    if (!data.length) {
+      cont.innerHTML = '<div class="empty-state">📦 Пока нет заказов для этого ПВЗ</div>';
+      return;
     }
 
-    // Сортируем по ячейке (правильный маршрут)
-    curPickItems = (items || []).map(i => ({ ...i, cell: stockMap[i.sku] || null }))
-      .sort((a, b) => (a.cell || "ЯЯЯ").localeCompare(b.cell || "ЯЯЯ"));
-    curPickOrder = orderId;
-
-    renderPickItems();
-  } catch (err) {
-    document.getElementById("pick-items").innerHTML =
-      `<div class="auth-error"><p>Ошибка: ${esc(err.message)}</p></div>`;
-  }
-}
-
-function renderPickItems() {
-  const cont = document.getElementById("pick-items");
-  const totalPlan = curPickItems.reduce((s, i) => s + i.qty, 0);
-  const totalDone = curPickItems.reduce((s, i) => s + (i.picked_qty || 0), 0);
-  document.getElementById("pick-progress").textContent = `Собрано ${totalDone} из ${totalPlan}`;
-
-  cont.innerHTML = curPickItems.map(i => {
-    const done = (i.picked_qty || 0) >= i.qty;
-    const noCell = !i.cell;
-    return `
-      <div class="pick-item ${done ? 'done' : ''} ${noCell ? 'no-cell' : ''}">
-        <div class="pick-item-row">
-          <div style="flex:1">
-            <div class="pick-cell ${noCell ? 'no-cell' : ''}">
-              📍 ${esc(i.cell || 'НЕТ АДРЕСА')}
-            </div>
-            <div class="pick-name">${esc(i.item_name || i.sku)}</div>
-            <div class="pick-meta">${esc(i.sku)} · ${esc(i.size || '')} ${esc(i.color || '')}</div>
-          </div>
-          <div style="text-align:right">
-            <div class="pick-qty">${i.picked_qty || 0} / ${i.qty}</div>
-            ${done ? '<div style="color:var(--green);font-size:14px">✓</div>' : ''}
-          </div>
+    cont.innerHTML = data.map(o => `
+      <div class="order-item">
+        <div class="order-item-head">
+          <span>#${esc(o.external_id)}</span>
+          <span style="color:var(--blue)">${esc(o.status)}</span>
+        </div>
+        <div class="order-item-sub">
+          Ящик: <b>${esc(o.box_id || 'Не указан')}</b><br>
+          Обновлено: ${new Date(o.created_at).toLocaleString()}
         </div>
       </div>
-    `;
-  }).join("");
-
-  // Если всё собрано — показываем кнопку "Заказ собран"
-  if (totalDone >= totalPlan && totalPlan > 0) {
-    cont.innerHTML += `
-      <button class="btn success" style="margin-top:12px" onclick="finishPicking()">
-        ✅ Заказ собран полностью
-      </button>
-    `;
-  }
-}
-
-async function onPickScan() {
-  const sku = document.getElementById("pick-sku").value.trim();
-  if (!sku) return res("pick-res", "err", "❌ Введите SKU", "");
-
-  // Найти позицию в текущем заказе
-  const item = curPickItems.find(i => i.sku === sku && (i.picked_qty || 0) < i.qty);
-  if (!item) {
-    const anyInOrder = curPickItems.find(i => i.sku === sku);
-    if (anyInOrder) return res("pick-res", "info", "ℹ️ Уже собрано", `Все ${anyInOrder.qty} шт.`);
-    return res("pick-res", "err", "❌ Не в этом заказе", "SKU не найден");
+    `).join('');
   }
 
-  try {
-    const newPicked = (item.picked_qty || 0) + 1;
-    const { error } = await db
-      .from("order_items")
-      .update({
-        picked_qty: newPicked,
-        picked_by: me.tg_id,
-        picked_at: newPicked >= item.qty ? new Date().toISOString() : null
-      })
-      .eq("id", item.id);
-
-    if (error) throw error;
-
-    haptic("success");
-    item.picked_qty = newPicked;
-    document.getElementById("pick-sku").value = "";
-    renderPickItems();
-    res("pick-res", "ok", `✅ ${esc(item.item_name || item.sku)}`,
-        `${newPicked} / ${item.qty}${newPicked >= item.qty ? ' — позиция собрана' : ''}`);
-
-    setTimeout(() => document.getElementById("pick-sku").focus(), 50);
-  } catch (err) {
-    haptic("error");
-    res("pick-res", "err", "❌ Ошибка", esc(err.message));
-  }
-}
-
-async function finishPicking() {
-  try {
-    const { error } = await db
-      .from("customer_orders")
-      .update({ status: "ASSEMBLED", assembled_at: new Date().toISOString() })
-      .eq("id", curPickOrder)
-      .eq("status", "ASSEMBLING");
-
-    if (error) throw error;
-    haptic("success");
-    tg.showAlert("✅ Заказ полностью собран!");
-    nav("scr-main");
-  } catch (err) {
-    haptic("error");
-    tg.showAlert("Ошибка: " + err.message);
-  }
-}
-
-// ════════════════════════════════════════════════
-// ПВЗ: ПРИЁМКА (теперь ищет по external_id)
-// ════════════════════════════════════════════════
-async function checkRec() {
-  const id = document.getElementById("rec-id").value.trim();
-  if (!id) return res("rec-res", "err", "❌ Введите номер заказа", "");
-
-  try {
-    const { data, error } = await db
-      .from("customer_orders")
-      .select("id, external_id, client_name, phone, pvz_code, status, order_items(sku, qty, item_name)")
-      .eq("external_id", id)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (!data) return res("rec-res", "err", "❌ Заказ не найден", "");
-
-    if (data.status !== "SHIPPED") {
-      return res("rec-res", "info", "ℹ️ Уже принят или не готов",
-        `Статус: ${esc(data.status)}`);
-    }
-
-    curOrder = data;
-    const itemsText = (data.order_items || [])
-      .map(i => `${esc(i.item_name || i.sku)} ×${i.qty}`).join(", ");
-    res("rec-res", "ok", "✅ Заказ найден",
-      `Клиент: ${esc(data.client_name || "—")}<br>Позиции: ${itemsText}`);
-    document.getElementById("rec-step2").style.display = "block";
-    document.getElementById("rec-cell").focus();
-  } catch (err) {
-    res("rec-res", "err", "❌ Ошибка", esc(err.message));
-  }
-}
-
-async function doRec() {
-  const cell = document.getElementById("rec-cell").value.trim();
-  if (!cell) return tg.showAlert("Укажите ячейку!");
-  if (!curOrder) return;
-
-  const btn = document.getElementById("btn-do-rec");
-  btn.disabled = true; btn.textContent = "Сохраняю...";
-
-  try {
-    // Обновляем заказ
-    const { data: orderUpd, error: err1 } = await db
-      .from("customer_orders")
-      .update({
-        status: "ARRIVED_AT_PVZ",
-        arrived_at: new Date().toISOString(),
-        received_by: me.tg_id
-      })
-      .eq("id", curOrder.id)
-      .eq("status", "SHIPPED")
-      .select();
-
-    if (err1) throw err1;
-    if (!orderUpd || !orderUpd.length) throw new Error("Заказ изменился, обновите страницу");
-
-    // Обновляем ячейку для всех позиций заказа
-    const { error: err2 } = await db
-      .from("order_items")
-      .update({ cell })
-      .eq("order_id", curOrder.id);
-    if (err2) throw err2;
-
-    haptic("success");
-    nav("scr-main");
-    tg.showAlert(`✅ Принято в ячейку ${cell}`);
-  } catch (err) {
-    haptic("error");
-    res("rec-res", "err", "❌ Ошибка", esc(err.message));
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "✅ Принять";
-  }
-}
-
-// ════════════════════════════════════════════════
-// ПВЗ: ВЫДАЧА
-// ════════════════════════════════════════════════
-async function findIss() {
-  const id = document.getElementById("iss-id").value.trim();
-  if (!id) return res("iss-res", "err", "❌ Введите номер заказа", "");
-
-  try {
-    const { data, error } = await db
-      .from("customer_orders")
-      .select("id, external_id, client_name, phone, pvz_code, status, order_items(cell)")
-      .eq("external_id", id)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (!data) return res("iss-res", "err", "❌ Заказ не найден", "");
-
-    if (data.status !== "ARRIVED_AT_PVZ") {
-      return res("iss-res", "err", "❌ Не готов к выдаче", `Статус: ${esc(data.status)}`);
-    }
-
-    curOrder = data;
-    const cell = (data.order_items && data.order_items[0]?.cell) || "—";
-    res("iss-res", "info", "✅ Найден на складе",
-      `Клиент: ${esc(data.client_name || "—")} · ${esc(data.phone || "")}`);
-    document.getElementById("iss-cell-val").textContent = cell;
-    document.getElementById("iss-confirm").style.display = "block";
-  } catch (err) {
-    res("iss-res", "err", "❌ Ошибка", esc(err.message));
-  }
-}
-
-async function doIss() {
-  if (!curOrder) return;
-  const btn = document.getElementById("btn-do-iss");
-  btn.disabled = true; btn.textContent = "Сохраняю...";
-
-  try {
-    const { data, error } = await db
-      .from("customer_orders")
-      .update({
-        status: "COMPLETED",
-        issued_at: new Date().toISOString(),
-        issued_by: me.tg_id
-      })
-      .eq("id", curOrder.id)
-      .eq("status", "ARRIVED_AT_PVZ")
-      .select();
-
-    if (error) throw error;
-    if (!data || !data.length) throw new Error("Заказ уже выдан или изменился");
-
-    haptic("success");
-    nav("scr-main");
-    tg.showAlert("✅ Выдано!");
-  } catch (err) {
-    haptic("error");
-    res("iss-res", "err", "❌ Ошибка", esc(err.message));
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "✅ Подтвердить выдачу";
-  }
-}
-
-// ════════════════════════════════════════════════
-// ПВЗ: ВОЗВРАТ
-// ════════════════════════════════════════════════
-async function checkRet() {
-  const id = document.getElementById("ret-id").value.trim();
-  if (!id) return res("ret-res", "err", "❌ Введите номер заказа", "");
-
-  try {
-    const { data, error } = await db
-      .from("customer_orders")
-      .select("id, external_id, client_name, phone, status, return_reason")
-      .eq("external_id", id)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (!data) return res("ret-res", "err", "❌ Заказ не найден", "");
-
-    if (data.status === "RETURNED") {
-      return res("ret-res", "info", "ℹ️ Уже возвращён",
-        `Причина: ${esc(data.return_reason || "—")}`);
-    }
-
-    curOrder = data;
-    res("ret-res", "info", "✅ Заказ найден",
-      `Клиент: ${esc(data.client_name || "—")}`);
-    document.getElementById("ret-step2").style.display = "block";
-  } catch (err) {
-    res("ret-res", "err", "❌ Ошибка", esc(err.message));
-  }
-}
-
-function selRet(reason, btn) {
-  curRetReason = reason;
-  document.querySelectorAll(".reason-btn").forEach(b => b.classList.remove("selected"));
-  btn.classList.add("selected");
-  document.getElementById("retCustomReason")?.removeAttribute?.("value");
-}
-
-async function doRet() {
-  if (!curRetReason) return tg.showAlert("Выберите причину!");
-  if (!curOrder) return;
-  const btn = document.getElementById("btn-do-ret");
-  btn.disabled = true; btn.textContent = "Сохраняю...";
-
-  try {
-    const { data, error } = await db
-      .from("customer_orders")
-      .update({
-        status: "RETURNED",
-        return_reason: curRetReason,
-        returned_at: new Date().toISOString(),
-        returned_by: me.tg_id
-      })
-      .eq("id", curOrder.id)
-      .neq("status", "RETURNED")
-      .select();
-
-    if (error) throw error;
-    if (!data || !data.length) throw new Error("Возврат уже был оформлен");
-
-    haptic("warning");
-    nav("scr-main");
-    tg.showAlert("↩️ Возврат оформлен");
-  } catch (err) {
-    haptic("error");
-    res("ret-res", "err", "❌ Ошибка", esc(err.message));
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "↩️ Оформить";
-  }
-}
-
-// ════════════════════════════════════════════════
-// СТАТИСТИКА
-// ════════════════════════════════════════════════
-async function stat(status, btn) {
-  document.querySelectorAll(".stat-tab").forEach(t => t.classList.remove("active"));
-  btn?.classList.add("active");
-
-  const list = document.getElementById("stat-list");
-  list.innerHTML = '<div class="loading"><div class="spinner"></div>Загрузка...</div>';
-
-  try {
-    const { data, error } = await db
-      .from("customer_orders")
-      .select("external_id, client_name, phone, pvz_code, status, return_reason, created_at, order_items(sku, item_name, cell)")
-      .eq("status", status)
-      .order("created_at", { ascending: false })
-      .limit(100);
-
-    if (error) throw error;
-
-    if (!data || !data.length) {
-      list.innerHTML = '<div class="empty-state"><div class="icon">📭</div>Пусто</div>';
-      return;
-    }
-
-    list.innerHTML = data.map(o => {
-      const items = (o.order_items || []);
-      const cell = items[0]?.cell || "";
-      const skus = items.map(i => i.sku).join(", ");
-      return `
-        <div class="order-item">
-          <div class="order-item-head">
-            <span>${esc(o.external_id)}</span>
-            <span style="color:var(--blue)">${esc(cell)}</span>
-          </div>
-          <div class="order-item-sub">${esc(o.client_name || "—")} · ${esc(skus || "")}</div>
-          ${o.return_reason ? `<div class="order-item-sub" style="color:var(--red)">${esc(o.return_reason)}</div>` : ""}
-        </div>
-      `;
-    }).join("");
-  } catch (err) {
-    list.innerHTML = `<div class="auth-error"><p>Ошибка: ${esc(err.message)}</p></div>`;
-  }
-}
-
-// ════════════════════════════════════════════════
-// СТАРТ
-// ════════════════════════════════════════════════
-init();
+  init();
 </script>
 </body>
 </html>

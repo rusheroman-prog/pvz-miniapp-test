@@ -3,137 +3,311 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ПВЗ Узум</title>
+    <title>Uzum PVZ</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #f4f4f5);
+            --text-color: var(--tg-theme-text-color, #222);
+            --hint-color: var(--tg-theme-hint-color, #999);
+            --card-bg: var(--tg-theme-secondary-bg-color, #ffffff);
+            --btn-bg: var(--tg-theme-button-color, #7000FF); /* Цвет Узум */
+            --btn-text: var(--tg-theme-button-text-color, #ffffff);
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
-            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            padding-bottom: 80px; /* Место под кнопку сканера */
         }
-        .btn {
-            background-color: var(--tg-theme-button-color, #3390ec);
-            color: var(--tg-theme-button-text-color, #ffffff);
+        .header {
+            padding: 15px 20px;
+            background: var(--card-bg);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .header h2 { margin: 0; font-size: 18px; }
+        .header p { margin: 5px 0 0; font-size: 13px; color: var(--hint-color); }
+        
+        .tabs {
+            display: flex;
+            background: var(--card-bg);
+            padding: 10px 20px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            font-weight: 600;
+            color: var(--hint-color);
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active {
+            color: var(--btn-bg);
+            border-bottom: 2px solid var(--btn-bg);
+        }
+
+        .order-list { padding: 15px; }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .order-id { font-weight: bold; font-size: 16px; }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            background: #eee;
+        }
+        .badge.shipped { background: #FFF3CD; color: #856404; }
+        .badge.arrived { background: #D4EDDA; color: #155724; }
+        
+        .info-row { font-size: 14px; margin-bottom: 5px; }
+        .info-row span { color: var(--hint-color); }
+        
+        .action-btn {
+            background: var(--btn-bg);
+            color: var(--btn-text);
             border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            width: 100%;
-            font-size: 16px;
-            margin-bottom: 15px;
-            cursor: pointer;
-        }
-        pre {
-            background: rgba(0,0,0,0.05);
             padding: 10px;
             border-radius: 8px;
-            overflow-x: auto;
-            font-size: 12px;
+            width: 100%;
+            font-size: 15px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .action-btn.outline {
+            background: transparent;
+            color: var(--btn-bg);
+            border: 1px solid var(--btn-bg);
+        }
+
+        .fab-scanner {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 10px rgba(112, 0, 255, 0.4);
+            z-index: 100;
         }
     </style>
 </head>
 <body>
-    <h2>Система ПВЗ</h2>
-    <p id="status">Инициализация...</p>
-    
-    <button class="btn" id="loadBtn" style="display: none;" onclick="fetchOrders()">Загрузить заказы</button>
-    
-    <div id="debug-info">
-        <h3>Логи:</h3>
-        <pre id="logArea">Ожидание...</pre>
+    <div class="header">
+        <h2>Мой ПВЗ</h2>
+        <p id="status-text">Авторизация...</p>
     </div>
+
+    <div class="tabs">
+        <div class="tab active" id="tab-shipped" onclick="switchTab('SHIPPED')">В пути (<span id="count-shipped">0</span>)</div>
+        <div class="tab" id="tab-arrived" onclick="switchTab('ARRIVED_AT_PVZ')">На складе (<span id="count-arrived">0</span>)</div>
+    </div>
+
+    <div class="order-list" id="orders-container">
+        </div>
+
+    <div class="fab-scanner" onclick="openScanner()">📷</div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Разворачиваем на весь экран
+        tg.expand();
+        tg.ready();
 
-        // ВАШИ ДАННЫЕ ИЗ SUPABASE
-        const SUPABASE_URL = 'https://ysvogudznyuszssdriih.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_kU91fqnkt80hbLcVEms6oA_eXKVzY2A'; 
-        
+        // --- ВАШИ КЛЮЧИ ---
+        const SUPABASE_URL = 'https://ysvogudznyuszssdriih.supabase.co'; // Ваш URL
+        const SUPABASE_ANON_KEY = 'sb_publishable_kU91fqnkt80hbLcVEms6oA_eXKVzY2A'; // Ваш ключ
+        // ------------------
+
         let supabaseClient = null;
-
-        function log(msg) {
-            const logArea = document.getElementById('logArea');
-            logArea.innerText += '\n' + msg;
-            console.log(msg);
-        }
+        let allOrders = [];
+        let currentFilter = 'SHIPPED'; // 'SHIPPED' или 'ARRIVED_AT_PVZ'
 
         async function authenticate() {
             try {
                 const initData = tg.initData;
-                
                 if (!initData) {
-                    document.getElementById('status').innerText = 'Ошибка: Откройте внутри Telegram';
-                    log('initData пустой. Приложение открыто в браузере?');
+                    document.getElementById('status-text').innerText = 'Откройте в Telegram';
                     return;
                 }
 
-                log('1. Отправляем initData в Edge Function...');
-                
                 const response = await fetch(`${SUPABASE_URL}/functions/v1/auth`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ initData: initData })
                 });
 
-                if (!response.ok) {
-                    const errText = await response.text();
-                    throw new Error(`Ошибка сервера: ${response.status} ${errText}`);
-                }
+                if (!response.ok) throw new Error('Ошибка токена');
 
                 const data = await response.json();
                 
-                if (data.token) {
-                    log('2. Токен получен! Создаем клиент Supabase...');
-                    
-                    // Инициализируем Supabase с нашим кастомным JWT
-                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-                        global: {
-                            headers: {
-                                Authorization: `Bearer ${data.token}`
-                            }
-                        }
-                    });
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                    global: { headers: { Authorization: `Bearer ${data.token}` } }
+                });
 
-                    // Мы расшифруем токен прямо в браузере, чтобы красиво показать роль
-const tokenPayload = JSON.parse(atob(data.token.split('.')[1]));
-document.getElementById('status').innerText = `✅ Авторизован (Роль: ${tokenPayload.role || 'Оператор'})`;;
-                    document.getElementById('loadBtn').style.display = 'block';
-                    log('Готово к работе.');
-                } else {
-                    throw new Error('Токен не найден в ответе');
-                }
-
+                const tokenPayload = JSON.parse(atob(data.token.split('.')[1]));
+                document.getElementById('status-text').innerText = `✅ Онлайн (Роль: ${tokenPayload.role})`;
+                
+                loadOrders();
             } catch (error) {
-                document.getElementById('status').innerText = 'Ошибка авторизации';
-                log('Ошибка: ' + error.message);
+                document.getElementById('status-text').innerText = `❌ Ошибка: ${error.message}`;
             }
         }
 
-        async function fetchOrders() {
+        async function loadOrders() {
             if (!supabaseClient) return;
-            
-            log('Загружаем заказы из БД...');
+            tg.MainButton.showProgress();
+
             try {
-                // Пытаемся получить заказы. RLS автоматически отфильтрует их по ПВЗ из токена!
+                // Загружаем заказы в статусе В ПУТИ и ПРИНЯТО НА ПВЗ
                 const { data, error } = await supabaseClient
                     .from('orders')
-                    .select('*');
+                    .select('*')
+                    .in('status', ['SHIPPED', 'ARRIVED_AT_PVZ']);
 
                 if (error) throw error;
                 
-                log(`Найдено заказов: ${data.length}`);
-                log(JSON.stringify(data, null, 2));
+                allOrders = data || [];
+                renderOrders();
             } catch (error) {
-                log('Ошибка загрузки: ' + error.message);
+                tg.showAlert('Ошибка загрузки данных');
+            } finally {
+                tg.MainButton.hideProgress();
             }
         }
 
-        // Запускаем авторизацию при старте
+        function switchTab(status) {
+            currentFilter = status;
+            document.getElementById('tab-shipped').classList.toggle('active', status === 'SHIPPED');
+            document.getElementById('tab-arrived').classList.toggle('active', status === 'ARRIVED_AT_PVZ');
+            renderOrders();
+        }
+
+        function renderOrders() {
+            const container = document.getElementById('orders-container');
+            container.innerHTML = '';
+
+            const filtered = allOrders.filter(o => o.status === currentFilter);
+            
+            // Обновляем счетчики
+            document.getElementById('count-shipped').innerText = allOrders.filter(o => o.status === 'SHIPPED').length;
+            document.getElementById('count-arrived').innerText = allOrders.filter(o => o.status === 'ARRIVED_AT_PVZ').length;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:#999; margin-top:30px;">Нет заказов в этом статусе</p>`;
+                return;
+            }
+
+            filtered.forEach(order => {
+                const isShipped = order.status === 'SHIPPED';
+                const badgeClass = isShipped ? 'shipped' : 'arrived';
+                const badgeText = isShipped ? 'В пути (ожидает)' : 'На полке ПВЗ';
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="order-id">${order.order_id}</div>
+                        <div class="badge ${badgeClass}">${badgeText}</div>
+                    </div>
+                    <div class="info-row"><span>Клиент:</span> ${order.client_name || 'Не указан'}</div>
+                    <div class="info-row"><span>Телефон:</span> +${order.phone || '---'}</div>
+                    <div class="info-row"><span>SKU:</span> ${order.sku} (x${order.qty || 1})</div>
+                    <div class="info-row"><span>Тарный ящик:</span> ${order.box_id || '---'}</div>
+                    
+                    ${isShipped 
+                        ? `<button class="action-btn outline" onclick="changeStatus('${order.order_id}', 'ARRIVED_AT_PVZ')">Принять заказ</button>`
+                        : `<button class="action-btn" onclick="changeStatus('${order.order_id}', 'COMPLETED')">Выдать клиенту</button>`
+                    }
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function changeStatus(orderId, newStatus) {
+            // Вибрация (Haptic feedback) для тактильного отклика
+            tg.HapticFeedback.impactOccurred('medium'); 
+            
+            try {
+                // Обновляем в Supabase
+                const { error } = await supabaseClient
+                    .from('orders')
+                    .update({ status: newStatus })
+                    .eq('order_id', orderId);
+
+                if (error) throw error;
+
+                // Перезагружаем список
+                loadOrders();
+                
+                if(newStatus === 'COMPLETED') {
+                    tg.showAlert(`Заказ ${orderId} успешно выдан!`);
+                }
+            } catch (error) {
+                tg.showAlert('Ошибка обновления статуса');
+            }
+        }
+
+        // --- ЛОГИКА СКАНЕРА ---
+        function openScanner() {
+            tg.showScanQrPopup({
+                text: "Отсканируйте ШК заказа или тарного ящика"
+            }, function(scannedText) {
+                // Вызывается, когда камера что-то распознала
+                tg.HapticFeedback.notificationOccurred('success');
+                
+                // Ищем отсканированный текст среди заказов
+                const orderByBox = allOrders.filter(o => o.box_id === scannedText && o.status === 'SHIPPED');
+                const orderById = allOrders.find(o => o.order_id === scannedText || o.sku === scannedText);
+
+                if (orderByBox.length > 0) {
+                    // Если отсканировали тарный ящик
+                    tg.showConfirm(`Принять тарный ящик ${scannedText}? В нем ${orderByBox.length} заказов.`, async function(confirmed) {
+                        if(confirmed) {
+                            for(let order of orderByBox) {
+                                await changeStatus(order.order_id, 'ARRIVED_AT_PVZ');
+                            }
+                        }
+                    });
+                    return true; // Закрыть сканер
+                } 
+                
+                if (orderById) {
+                    // Если отсканировали конкретный заказ
+                    tg.showAlert(`Найден заказ: ${orderById.order_id}. Клиент: ${orderById.client_name}`);
+                    return true; // Закрыть сканер
+                }
+
+                tg.showAlert(`Штрихкод ${scannedText} не найден в текущих списках.`);
+                return true; // Закрыть сканер
+            });
+        }
+
+        // Запуск
         authenticate();
     </script>
 </body>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Uzum WMS — Mini App</title>
+  <title>Uzum PVZ — Операции</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -13,35 +13,66 @@
       --tg-hint: var(--tg-theme-hint-color, #999999);
       --tg-btn: var(--tg-theme-button-color, #7000FF);
       --tg-second: var(--tg-theme-secondary-bg-color, #f4f4f5);
+      --red: #ff3b30; --green: #34c759; --blue: #007aff;
     }
-    body { font-family: -apple-system, system-ui, sans-serif; background: var(--tg-second); color: var(--tg-text); margin: 0; padding: 0; }
-    .header { background: var(--tg-bg); padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-    .header h1 { font-size: 18px; margin: 0; font-weight: 800; }
-    .screen { display: none; padding: 16px; }
+    body { font-family: -apple-system, system-ui, sans-serif; background: var(--tg-second); color: var(--tg-text); margin: 0; padding-bottom: 90px; }
+    
+    .header { background: var(--tg-bg); padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 17px; margin: 0; font-weight: 800; }
+
+    .screen { display: none; padding: 15px; }
     .screen.active { display: block; }
-    .search-input { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background: var(--tg-bg); color: var(--tg-text); font-size: 16px; box-sizing: border-box; margin-bottom: 15px; outline: none; }
-    .card { background: var(--tg-bg); padding: 16px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; border: 1px solid transparent; }
-    .card:active { background: var(--tg-second); }
-    .card-title { font-weight: 800; color: var(--tg-btn); font-size: 17px; margin-bottom: 4px; }
-    .card-sub { font-size: 13px; color: var(--tg-hint); line-height: 1.4; }
+
+    /* Табы */
+    .tabs { display: flex; background: var(--tg-bg); padding: 5px; gap: 5px; position: sticky; top: 55px; z-index: 90; margin-bottom: 15px; }
+    .tab { flex: 1; padding: 10px; border: none; background: none; color: var(--tg-hint); font-weight: bold; font-size: 12px; cursor: pointer; border-radius: 8px; }
+    .tab.active { background: var(--tg-btn); color: white; }
+
+    /* Поиск/Сканер */
+    .action-bar { background: var(--tg-bg); padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; }
+
+    /* Карточки */
+    .card { background: var(--tg-bg); padding: 16px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .card-title { font-weight: bold; font-size: 16px; margin-bottom: 5px; display: flex; justify-content: space-between; }
+    .card-info { font-size: 13px; color: var(--tg-hint); line-height: 1.4; }
+    
+    /* Кнопки действий */
+    .btn-group { display: flex; gap: 8px; margin-top: 12px; }
+    .btn-sm { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; }
+    .btn-green { background: var(--green); color: white; }
+    .btn-blue { background: var(--blue); color: white; }
+    .btn-red { background: var(--red); color: white; }
+    
     .empty { text-align: center; padding: 40px; color: var(--tg-hint); }
-    .btn-reset { font-size: 11px; border: none; background: #eee; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
   </style>
 </head>
 <body>
 
 <div class="header">
-  <h1 id="h-title">UZUM WMS</h1>
-  <button id="btn-reset" class="btn-reset" style="display:none;" onclick="resetPvz()">Сменить ПВЗ</button>
+  <h1 id="h-title">UZUM PVZ</h1>
+  <button onclick="resetPvz()" style="font-size: 10px; border: none; background: #eee; padding: 4px 8px; border-radius: 5px;">Сменить ПВЗ</button>
 </div>
 
 <div id="scr-select" class="screen">
-  <input type="text" id="pvz-search" class="search-input" placeholder="Поиск по номеру или адресу..." oninput="filterPvz()">
+  <input type="text" id="pvz-search" class="input" placeholder="Поиск ПВЗ..." oninput="filterPvz()">
   <div id="pvz-list"></div>
 </div>
 
-<div id="scr-orders" class="screen">
-  <div id="order-list"></div>
+<div id="scr-main" class="screen">
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('inbound', this)">ПРИЕМКА</button>
+    <button class="tab" onclick="setTab('stock', this)">СКЛАД</button>
+    <button class="tab" onclick="setTab('outbound', this)">ВЫДАЧА</button>
+    <button class="tab" onclick="setTab('return', this)">ВОЗВРАТ</button>
+  </div>
+
+  <div class="action-bar">
+    <input type="text" id="main-scan" class="input" placeholder="Отсканируйте штрихкод заказа..." onkeydown="handleScan(event)">
+    <div style="font-size: 11px; color: var(--tg-hint); margin-top: 8px; text-align: center;">Введите ID заказа и нажмите Enter для быстрого действия</div>
+  </div>
+
+  <div id="list-container"></div>
 </div>
 
 <script>
@@ -50,6 +81,7 @@
   const S_KEY = "sb_publishable_kU91fqnkt80hbLcVEms6oA_eXKVzY2A";
   const db = window.supabase.createClient(S_URL, S_KEY);
 
+  let currentTab = 'inbound';
   let branches = [];
   let myPvz = localStorage.getItem('my_pvz_code');
 
@@ -58,89 +90,131 @@
       showScreen('select');
       await loadBranches();
     } else {
-      showOrders();
+      showScreen('main');
+      document.getElementById('h-title').innerText = `ПВЗ ${myPvz}`;
+      loadOrders();
     }
   }
 
+  // --- ЛОГИКА ПВЗ ---
   async function loadBranches() {
-    const list = document.getElementById('pvz-list');
-    list.innerHTML = '<div class="empty">Загрузка ПВЗ...</div>';
-    
-    // Пытаемся получить данные из таблицы branches
-    const { data, error } = await db.from('branches').select('*');
-    
-    if (error) {
-      list.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`;
-      return;
-    }
-
-    // Универсальный мапинг: понимает и ПВЗ, и code, и Название филиала
-    branches = data.map(b => ({
-      code: b.code || b['ПВЗ'] || '?',
-      addr: b.full_address || b['Название филиала'] || 'Адрес не указан',
-      route: b.route_number || b['Маршрут'] || ''
-    }));
-
+    const { data } = await db.from('branches').select('*');
+    branches = data.map(b => ({ code: b.code || b['ПВЗ'], addr: b.full_address || b['Название филиала'] }));
     renderBranches(branches);
   }
 
   function renderBranches(items) {
     const cont = document.getElementById('pvz-list');
-    if (!items.length) { cont.innerHTML = '<div class="empty">Ничего не найдено</div>'; return; }
     cont.innerHTML = items.map(b => `
       <div class="card" onclick="setPvz('${b.code}')">
-        <div class="card-title">${b.code} ${b.route ? `<small style="opacity:0.5">(Маршрут ${b.route})</small>` : ''}</div>
-        <div class="card-sub">${b.addr}</div>
+        <div class="card-title" style="color:var(--tg-btn)">${b.code}</div>
+        <div class="card-info">${b.addr}</div>
       </div>
     `).join('');
   }
 
   function filterPvz() {
     const q = document.getElementById('pvz-search').value.toLowerCase();
-    const f = branches.filter(b => b.code.toLowerCase().includes(q) || b.addr.toLowerCase().includes(q));
-    renderBranches(f);
+    renderBranches(branches.filter(b => b.code.toLowerCase().includes(q) || b.addr.toLowerCase().includes(q)));
   }
 
-  function setPvz(code) {
-    localStorage.setItem('my_pvz_code', code);
-    myPvz = code;
-    showOrders();
-  }
-
+  function setPvz(code) { localStorage.setItem('my_pvz_code', code); location.reload(); }
   function resetPvz() { localStorage.removeItem('my_pvz_code'); location.reload(); }
 
-  function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById('scr-' + id).classList.add('active');
-  }
-
-  function showOrders() {
-    document.getElementById('h-title').innerText = `ПВЗ ${myPvz}`;
-    document.getElementById('btn-reset').style.display = 'block';
-    showScreen('orders');
+  // --- ЛОГИКА ЗАКАЗОВ ---
+  function setTab(tab, el) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
     loadOrders();
   }
 
   async function loadOrders() {
-    const cont = document.getElementById('order-list');
-    cont.innerHTML = '<div class="empty">Загрузка заказов...</div>';
+    const cont = document.getElementById('list-container');
+    cont.innerHTML = '<div class="empty">Загрузка...</div>';
 
-    // ВАЖНО: фильтруем по branch_name
-    const { data, error } = await db.from('customer_orders')
-      .select('*')
-      .eq('branch_name', myPvz)
-      .order('created_at', { ascending: false });
+    let query = db.from('customer_orders').select('*').eq('branch_name', myPvz);
 
-    if (error) { cont.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`; return; }
-    if (!data.length) { cont.innerHTML = '<div class="empty">📦 Заказов для этого ПВЗ нет</div>'; return; }
+    // Фильтруем в зависимости от вкладки
+    if (currentTab === 'inbound') query = query.in('status', ['SHIPPED', 'PACKED']);
+    else if (currentTab === 'stock') query = query.eq('status', 'ARRIVED_AT_PVZ');
+    else if (currentTab === 'outbound') query = query.eq('status', 'ARRIVED_AT_PVZ');
+    else if (currentTab === 'return') query = query.eq('status', 'RETURNED');
+
+    const { data, error } = await query.order('created_at', { ascending: false }).limit(50);
+
+    if (!data || !data.length) {
+        cont.innerHTML = `<div class="empty">Вкладка ${currentTab} пуста</div>`;
+        return;
+    }
 
     cont.innerHTML = data.map(o => `
-      <div class="card" style="cursor:default">
-        <div class="card-title">#${o.external_id}</div>
-        <div class="card-sub">Статус: <b>${o.status}</b></div>
-        <div class="card-sub">Ящик: ${o.box_id || '—'}</div>
+      <div class="card">
+        <div class="card-title">
+          <span>#${o.external_id}</span>
+          <span style="font-size:12px; color:var(--tg-btn)">${o.status}</span>
+        </div>
+        <div class="card-info">
+          Ячейка: <b>${o.pvz_cell || 'Не назначена'}</b><br>
+          Ящик отгрузки: ${o.box_id || '—'}
+        </div>
+        <div class="btn-group">
+          ${renderActions(o)}
+        </div>
       </div>
     `).join('');
+  }
+
+  function renderActions(o) {
+    if (currentTab === 'inbound') return `<button class="btn-sm btn-green" onclick="updateStatus('${o.id}', 'ARRIVED_AT_PVZ')">ПРИНЯТЬ</button>`;
+    if (currentTab === 'stock') return `<button class="btn-sm btn-blue" onclick="setCell('${o.id}')">ЯЧЕЙКА</button>`;
+    if (currentTab === 'outbound') return `<button class="btn-sm btn-green" onclick="updateStatus('${o.id}', 'COMPLETED')">ВЫДАТЬ</button> <button class="btn-sm btn-red" onclick="processReturn('${o.id}')">ВОЗВРАТ</button>`;
+    return '';
+  }
+
+  // --- ОПЕРАЦИИ ---
+  async function handleScan(e) {
+    if (e.key === 'Enter') {
+      const val = e.target.value.trim();
+      if (!val) return;
+      
+      // Авто-приемка или авто-выдача по штрихкоду
+      const { data: order } = await db.from('customer_orders').select('id, status').eq('external_id', val).eq('branch_name', myPvz).maybeSingle();
+      
+      if (!order) { alert("Заказ не найден на этом ПВЗ"); }
+      else {
+        if (order.status === 'SHIPPED' || order.status === 'PACKED') await updateStatus(order.id, 'ARRIVED_AT_PVZ');
+        else if (order.status === 'ARRIVED_AT_PVZ' && currentTab === 'outbound') await updateStatus(order.id, 'COMPLETED');
+        else alert(`Текущий статус заказа: ${order.status}`);
+      }
+      e.target.value = '';
+    }
+  }
+
+  async function updateStatus(id, newStatus) {
+    const { error } = await db.from('customer_orders').update({ status: newStatus }).eq('id', id);
+    if (!error) { tg.HapticFeedback.notificationOccurred('success'); loadOrders(); }
+  }
+
+  async function setCell(id) {
+    const cell = prompt("Введите номер ячейки (например, 12-А):");
+    if (cell) {
+      const { error } = await db.from('customer_orders').update({ pvz_cell: cell }).eq('id', id);
+      if (!error) loadOrders();
+    }
+  }
+
+  async function processReturn(id) {
+    const reason = prompt("Укажите причину возврата:");
+    if (reason) {
+      await db.from('customer_orders').update({ status: 'RETURNED', return_reason: reason }).eq('id', id);
+      loadOrders();
+    }
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('scr-' + id).classList.add('active');
   }
 
   init();

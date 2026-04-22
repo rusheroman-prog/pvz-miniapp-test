@@ -99,7 +99,9 @@
                         }
                     });
 
-                    document.getElementById('status').innerText = `Авторизован как: ${data.user.role}`;
+                    // Мы расшифруем токен прямо в браузере, чтобы красиво показать роль
+const tokenPayload = JSON.parse(atob(data.token.split('.')[1]));
+document.getElementById('status').innerText = `✅ Авторизован (Роль: ${tokenPayload.role || 'Оператор'})`;;
                     document.getElementById('loadBtn').style.display = 'block';
                     log('Готово к работе.');
                 } else {

@@ -3,101 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Uzum WMS — Visa Kapitalbank</title>
+  <title>Uzum WMS — Mini App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --tg-bg:       var(--tg-theme-bg-color, #ffffff);
-      --tg-text:     var(--tg-theme-text-color, #222222);
-      --tg-hint:     var(--tg-theme-hint-color, #999999);
-      --tg-btn:      var(--tg-theme-button-color, #7000FF);
-      --tg-btn-text: var(--tg-theme-button-text-color, #ffffff);
-      --tg-second:   var(--tg-theme-secondary-bg-color, #f4f4f5);
-      --radius: 12px;
-      --green:  #34c759;
-      --blue:   #007aff;
+      --tg-bg: var(--tg-theme-bg-color, #ffffff);
+      --tg-text: var(--tg-theme-text-color, #222222);
+      --tg-hint: var(--tg-theme-hint-color, #999999);
+      --tg-btn: var(--tg-theme-button-color, #7000FF);
+      --tg-second: var(--tg-theme-secondary-bg-color, #f4f4f5);
     }
-    body {
-      font-family: -apple-system, system-ui, sans-serif;
-      background: var(--tg-second); color: var(--tg-text);
-      margin: 0; padding: 0; user-select: none;
-    }
-    .header {
-      background: var(--tg-bg); padding: 16px 20px;
-      position: sticky; top: 0; z-index: 100;
-      display: flex; justify-content: space-between; align-items: center;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
+    body { font-family: -apple-system, system-ui, sans-serif; background: var(--tg-second); color: var(--tg-text); margin: 0; padding: 0; }
+    .header { background: var(--tg-bg); padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
     .header h1 { font-size: 18px; margin: 0; font-weight: 800; }
-    
-    .screen { display: none; padding: 16px; animation: fadeIn 0.2s ease; }
+    .screen { display: none; padding: 16px; }
     .screen.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* Поиск */
-    .search-container { position: sticky; top: 60px; background: var(--tg-second); padding: 10px 0; z-index: 90; }
-    .search-input {
-      width: 100%; padding: 12px 16px; border-radius: var(--radius);
-      border: 1px solid rgba(0,0,0,0.1); background: var(--tg-bg);
-      color: var(--tg-text); font-size: 16px; box-sizing: border-box; outline: none;
-    }
-
-    /* Карточки ПВЗ */
-    .pvz-card {
-      background: var(--tg-bg); padding: 16px; border-radius: var(--radius);
-      margin-bottom: 10px; border: 1px solid transparent;
-      transition: all 0.2s; cursor: pointer;
-    }
-    .pvz-card:active { transform: scale(0.98); background: var(--tg-second); }
-    .pvz-code { font-weight: 800; color: var(--tg-btn); font-size: 17px; margin-bottom: 4px; }
-    .pvz-addr { font-size: 13px; color: var(--tg-hint); line-height: 1.4; }
-
-    /* Заказы */
-    .order-item {
-      background: var(--tg-bg); padding: 16px; border-radius: var(--radius);
-      margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    .order-item-head { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 4px; }
-    .order-item-sub { font-size: 13px; color: var(--tg-hint); }
-
-    .btn-reset { font-size: 12px; padding: 6px 12px; border-radius: 8px; border: none; background: #eee; cursor: pointer; }
-    .empty-state { text-align: center; padding: 40px 20px; color: var(--tg-hint); }
+    .search-input { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background: var(--tg-bg); color: var(--tg-text); font-size: 16px; box-sizing: border-box; margin-bottom: 15px; outline: none; }
+    .card { background: var(--tg-bg); padding: 16px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; border: 1px solid transparent; }
+    .card:active { background: var(--tg-second); }
+    .card-title { font-weight: 800; color: var(--tg-btn); font-size: 17px; margin-bottom: 4px; }
+    .card-sub { font-size: 13px; color: var(--tg-hint); line-height: 1.4; }
+    .empty { text-align: center; padding: 40px; color: var(--tg-hint); }
+    .btn-reset { font-size: 11px; border: none; background: #eee; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
   </style>
 </head>
 <body>
 
 <div class="header">
-  <h1 id="header-title">UZUM WMS</h1>
-  <button id="btn-change-pvz" class="btn-reset" style="display:none;" onclick="resetPvz()">Сменить ПВЗ</button>
+  <h1 id="h-title">UZUM WMS</h1>
+  <button id="btn-reset" class="btn-reset" style="display:none;" onclick="resetPvz()">Сменить ПВЗ</button>
 </div>
 
 <div id="scr-select" class="screen">
-  <div class="search-container">
-    <input type="text" id="pvz-search" class="search-input" placeholder="Поиск ПВЗ (номер или адрес)..." oninput="filterPvz()">
-  </div>
+  <input type="text" id="pvz-search" class="search-input" placeholder="Поиск по номеру или адресу..." oninput="filterPvz()">
   <div id="pvz-list"></div>
 </div>
 
 <div id="scr-orders" class="screen">
-  <div id="order-list-cont"></div>
+  <div id="order-list"></div>
 </div>
 
 <script>
-  const tg = window.Telegram.WebApp;
-  tg.expand();
-
+  const tg = window.Telegram.WebApp; tg.expand();
   const S_URL = "https://ysvogudznyuszssdriih.supabase.co";
   const S_KEY = "sb_publishable_kU91fqnkt80hbLcVEms6oA_eXKVzY2A";
   const db = window.supabase.createClient(S_URL, S_KEY);
 
-  let allBranches = [];
-  let selectedPvz = localStorage.getItem('my_pvz_code');
-
-  const esc = (s) => String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]));
+  let branches = [];
+  let myPvz = localStorage.getItem('my_pvz_code');
 
   async function init() {
-    if (!selectedPvz) {
+    if (!myPvz) {
       showScreen('select');
       await loadBranches();
     } else {
@@ -106,58 +63,51 @@
   }
 
   async function loadBranches() {
-    const listCont = document.getElementById('pvz-list');
-    listCont.innerHTML = '<div class="empty-state">Загрузка справочника...</div>';
+    const list = document.getElementById('pvz-list');
+    list.innerHTML = '<div class="empty">Загрузка ПВЗ...</div>';
     
+    // Пытаемся получить данные из таблицы branches
     const { data, error } = await db.from('branches').select('*');
     
     if (error) {
-        listCont.innerHTML = `<div class="empty-state">Ошибка БД: ${error.message}</div>`;
-        return;
+      list.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`;
+      return;
     }
 
-    // Обработка данных (на случай если колонки называются ПВЗ или code)
-    allBranches = data.map(b => ({
+    // Универсальный мапинг: понимает и ПВЗ, и code, и Название филиала
+    branches = data.map(b => ({
       code: b.code || b['ПВЗ'] || '?',
-      address: b.full_address || b['Название филиала'] || 'Адрес не указан',
+      addr: b.full_address || b['Название филиала'] || 'Адрес не указан',
       route: b.route_number || b['Маршрут'] || ''
     }));
 
-    renderPvzList(allBranches);
+    renderBranches(branches);
   }
 
-  function renderPvzList(list) {
-    const container = document.getElementById('pvz-list');
-    if (!list.length) {
-      container.innerHTML = '<div class="empty-state">ПВЗ не найдены</div>';
-      return;
-    }
-    container.innerHTML = list.map(b => `
-      <div class="pvz-card" onclick="setMyPvz('${esc(b.code)}')">
-        <div class="pvz-code">${esc(b.code)} ${b.route ? `<span style="font-size:12px;opacity:0.5;margin-left:8px;">Маршрут ${b.route}</span>` : ''}</div>
-        <div class="pvz-addr">${esc(b.address)}</div>
+  function renderBranches(items) {
+    const cont = document.getElementById('pvz-list');
+    if (!items.length) { cont.innerHTML = '<div class="empty">Ничего не найдено</div>'; return; }
+    cont.innerHTML = items.map(b => `
+      <div class="card" onclick="setPvz('${b.code}')">
+        <div class="card-title">${b.code} ${b.route ? `<small style="opacity:0.5">(Маршрут ${b.route})</small>` : ''}</div>
+        <div class="card-sub">${b.addr}</div>
       </div>
     `).join('');
   }
 
   function filterPvz() {
     const q = document.getElementById('pvz-search').value.toLowerCase();
-    const filtered = allBranches.filter(b => 
-      b.code.toLowerCase().includes(q) || b.address.toLowerCase().includes(q)
-    );
-    renderPvzList(filtered);
+    const f = branches.filter(b => b.code.toLowerCase().includes(q) || b.addr.toLowerCase().includes(q));
+    renderBranches(f);
   }
 
-  function setMyPvz(code) {
+  function setPvz(code) {
     localStorage.setItem('my_pvz_code', code);
-    selectedPvz = code;
+    myPvz = code;
     showOrders();
   }
 
-  function resetPvz() {
-    localStorage.removeItem('my_pvz_code');
-    location.reload();
-  }
+  function resetPvz() { localStorage.removeItem('my_pvz_code'); location.reload(); }
 
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -165,42 +115,30 @@
   }
 
   function showOrders() {
-    document.getElementById('header-title').innerText = `ПВЗ ${selectedPvz}`;
-    document.getElementById('btn-change-pvz').style.display = 'block';
+    document.getElementById('h-title').innerText = `ПВЗ ${myPvz}`;
+    document.getElementById('btn-reset').style.display = 'block';
     showScreen('orders');
     loadOrders();
   }
 
   async function loadOrders() {
-    const cont = document.getElementById('order-list-cont');
-    cont.innerHTML = '<div class="empty-state">Загрузка заказов...</div>';
+    const cont = document.getElementById('order-list');
+    cont.innerHTML = '<div class="empty">Загрузка заказов...</div>';
 
-    // ВАЖНО: Используем branch_name, так как это имя колонки в нашей базе заказов
+    // ВАЖНО: фильтруем по branch_name
     const { data, error } = await db.from('customer_orders')
-      .select('external_id, status, box_id, created_at')
-      .eq('branch_name', selectedPvz)
+      .select('*')
+      .eq('branch_name', myPvz)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      cont.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`;
-      return;
-    }
-
-    if (!data.length) {
-      cont.innerHTML = '<div class="empty-state">📦 Пока нет заказов для этого ПВЗ</div>';
-      return;
-    }
+    if (error) { cont.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`; return; }
+    if (!data.length) { cont.innerHTML = '<div class="empty">📦 Заказов для этого ПВЗ нет</div>'; return; }
 
     cont.innerHTML = data.map(o => `
-      <div class="order-item">
-        <div class="order-item-head">
-          <span>#${esc(o.external_id)}</span>
-          <span style="color:var(--blue)">${esc(o.status)}</span>
-        </div>
-        <div class="order-item-sub">
-          Ящик: <b>${esc(o.box_id || 'Не указан')}</b><br>
-          Обновлено: ${new Date(o.created_at).toLocaleString()}
-        </div>
+      <div class="card" style="cursor:default">
+        <div class="card-title">#${o.external_id}</div>
+        <div class="card-sub">Статус: <b>${o.status}</b></div>
+        <div class="card-sub">Ящик: ${o.box_id || '—'}</div>
       </div>
     `).join('');
   }

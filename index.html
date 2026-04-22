@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Uzum PVZ</title>
+    <title>Uzum PVZ - Терминал</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -15,90 +15,235 @@
             --btn-bg: var(--tg-theme-button-color, #7000FF);
             --btn-text: var(--tg-theme-button-text-color, #ffffff);
             --danger: #E53935;
+            --success: #4CAF50;
+            --warning: #FF9800;
+            --info: #2196F3;
         }
+        * { box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0; padding: 0; padding-bottom: 80px;
+            background-color: var(--bg-color); color: var(--text-color);
+            margin: 0; padding: 0;
         }
+        
+        /* Умная шапка с дашбордом */
         .header {
             padding: 15px 20px; background: var(--card-bg);
             border-bottom: 1px solid rgba(0,0,0,0.1);
-            position: sticky; top: 0; z-index: 10;
+            position: sticky; top: 0; z-index: 50;
+        }
+        .header-top {
+            display: flex; justify-content: space-between; align-items: center;
         }
         .header h2 { margin: 0; font-size: 18px; }
-        .header p { margin: 5px 0 0; font-size: 13px; color: var(--hint-color); }
+        .operator-name { font-size: 14px; color: var(--hint-color); font-weight: 500; }
         
-        .tabs {
-            display: flex; background: var(--card-bg);
-            padding: 10px 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05);
+        .mini-dashboard {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px;
         }
-        .tab {
-            flex: 1; text-align: center; padding: 10px 5px;
-            font-size: 13px; font-weight: 600; color: var(--hint-color);
-            border-bottom: 2px solid transparent; cursor: pointer;
+        .dash-card {
+            background: var(--bg-color); padding: 10px; border-radius: 8px; 
+            font-size: 12px; font-weight: 500; color: var(--text-color);
+            border: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;
         }
-        .tab.active { color: var(--btn-bg); border-bottom: 2px solid var(--btn-bg); }
+        .dash-card .val { font-weight: 800; font-size: 14px; }
+        .dash-card.info { border-left: 3px solid var(--info); }
+        .dash-card.primary { border-left: 3px solid var(--btn-bg); }
+        .dash-card.warning { border-left: 3px solid var(--warning); }
+        .dash-card.success { border-left: 3px solid var(--success); }
 
-        .order-list { padding: 15px; }
-        .card {
-            background: var(--card-bg); border-radius: 12px;
-            padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        /* Панель старения заказов */
+        .aging-panel {
+            grid-column: span 2; background: var(--bg-color); padding: 12px; 
+            border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); margin-top: 4px;
         }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .order-id { font-weight: bold; font-size: 16px; }
-        
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; background: #eee; }
-        .badge.shipped { background: #FFF3CD; color: #856404; }
-        .badge.placement { background: #CCE5FF; color: #004085; }
-        .badge.ready { background: #D4EDDA; color: #155724; }
-        
-        .info-row { font-size: 14px; margin-bottom: 5px; }
-        .info-row span { color: var(--hint-color); display: inline-block; width: 80px; }
-        
-        .cell-highlight {
-            background: #FFE500; color: #000; padding: 3px 8px; 
-            border-radius: 4px; font-weight: bold; font-size: 16px; border: 1px dashed #000;
+        .aging-title {
+            font-size: 11px; color: var(--hint-color); margin-bottom: 8px; 
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
         }
+        .aging-bars {
+            display: flex; justify-content: space-between; gap: 5px;
+        }
+        .age-badge {
+            flex: 1; text-align: center; font-size: 10px; padding: 6px 0;
+            background: var(--card-bg); border-radius: 6px; border: 1px solid rgba(0,0,0,0.05);
+            color: var(--hint-color); display: flex; flex-direction: column; gap: 4px;
+        }
+        .age-badge b { font-size: 14px; color: var(--text-color); }
+        .age-badge.danger { background: #FFEBEE; border-color: #FFCDD2; color: var(--danger); }
+        .age-badge.danger b { color: var(--danger); }
+        .age-badge.alert { background: #FFF3E0; border-color: #FFE0B2; color: var(--warning); }
+        .age-badge.alert b { color: var(--warning); }
 
+        /* Экраны */
+        .screen { display: none; padding: 20px; }
+        .screen.active { display: block; }
+
+        /* Главное меню */
+        .main-menu {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 5px;
+        }
+        .menu-btn {
+            background: var(--card-bg); border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 16px; padding: 25px 15px; text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03); cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: var(--text-color); font-weight: 600; font-size: 15px;
+        }
+        .menu-btn:active { transform: scale(0.98); }
+        .menu-btn.full-width { grid-column: span 2; }
+        .menu-icon { font-size: 32px; margin-bottom: 10px; }
+
+        /* Формы действий */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; color: var(--hint-color); margin-bottom: 5px; font-weight: 500;}
+        input, select {
+            width: 100%; padding: 14px; border-radius: 10px;
+            border: 1px solid rgba(0,0,0,0.1); background: var(--bg-color);
+            color: var(--text-color); font-size: 16px; outline: none;
+        }
+        input:focus, select:focus { border-color: var(--btn-bg); }
+        
         .action-btn {
             background: var(--btn-bg); color: var(--btn-text);
-            border: none; padding: 12px; border-radius: 8px; width: 100%;
-            font-size: 15px; font-weight: bold; margin-top: 10px; cursor: pointer;
+            border: none; padding: 16px; border-radius: 12px; width: 100%;
+            font-size: 16px; font-weight: bold; margin-top: 10px; cursor: pointer;
         }
-        .action-btn.outline { background: transparent; color: var(--btn-bg); border: 1px solid var(--btn-bg); }
-        .action-btn.secure { background: #222; color: #fff; } /* Цвет для кнопки скана */
+        .action-btn.danger { background: var(--danger); }
+        
+        .scan-btn {
+            background: var(--card-bg); color: var(--btn-bg);
+            border: 2px dashed var(--btn-bg); padding: 16px; border-radius: 12px;
+            width: 100%; font-size: 16px; font-weight: bold; margin-bottom: 15px;
+            display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;
+        }
 
-        .fab-scanner {
-            position: fixed; bottom: 20px; right: 20px;
-            background: var(--btn-bg); color: var(--btn-text);
-            width: 60px; height: 60px; border-radius: 30px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 24px; box-shadow: 0 4px 10px rgba(112, 0, 255, 0.4); z-index: 100; cursor: pointer;
+        /* Статистика */
+        .stat-tabs { display: flex; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; }
+        .stat-tab { 
+            padding: 8px 15px; background: var(--card-bg); border-radius: 20px; 
+            margin-right: 10px; white-space: nowrap; font-size: 13px; font-weight: 600;
+            color: var(--hint-color); border: 1px solid rgba(0,0,0,0.05); cursor: pointer;
         }
+        .stat-tab.active { background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-bg); }
+        
+        .order-card {
+            background: var(--card-bg); border-radius: 12px; padding: 15px;
+            margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); font-size: 14px;
+        }
+        .order-card-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 8px; font-size: 15px;}
+        .order-card .sub { color: var(--hint-color); font-size: 12px; margin-top: 5px; }
+        .cell-badge { background: #FFE500; color: #000; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="header">
-        <h2>Мой ПВЗ</h2>
-        <p id="status-text">Авторизация...</p>
+        <div class="header-top">
+            <h2 id="header-title">Терминал ПВЗ</h2>
+            <span class="operator-name" id="operator-name">Загрузка...</span>
+        </div>
+        
+        <div class="mini-dashboard" id="mini-dashboard" style="display: none;">
+            <div class="dash-card info">
+                <span>🚚 В пути:</span> <span class="val" style="color: var(--info);" id="dash-shipped">0</span>
+            </div>
+            <div class="dash-card primary">
+                <span>📥 Принято:</span> <span class="val" style="color: var(--btn-bg);" id="dash-arrived">0</span>
+            </div>
+            <div class="dash-card warning">
+                <span>⏳ Без полки:</span> <span class="val" style="color: var(--warning);" id="dash-noplacement">0</span>
+            </div>
+            <div class="dash-card success">
+                <span>✅ Размещено:</span> <span class="val" style="color: var(--success);" id="dash-placed">0</span>
+            </div>
+            
+            <div class="aging-panel">
+                <div class="aging-title">Срок хранения на ПВЗ (дней)</div>
+                <div class="aging-bars">
+                    <div class="age-badge">до 1<b id="age-1">0</b></div>
+                    <div class="age-badge">1-3<b id="age-3">0</b></div>
+                    <div class="age-badge">3-5<b id="age-5">0</b></div>
+                    <div class="age-badge alert">5-7<b id="age-7">0</b></div>
+                    <div class="age-badge danger">&gt;7<b id="age-max">0</b></div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="tabs">
-        <div class="tab active" id="tab-shipped" onclick="switchTab('SHIPPED')">В пути (<span id="count-shipped">0</span>)</div>
-        <div class="tab" id="tab-placement" onclick="switchTab('PLACEMENT')">Размещение (<span id="count-placement">0</span>)</div>
-        <div class="tab" id="tab-ready" onclick="switchTab('READY')">На полке (<span id="count-ready">0</span>)</div>
+    <div id="screen-main" class="screen active">
+        <div class="main-menu">
+            <div class="menu-btn" onclick="openScreen('screen-receive')">
+                <span class="menu-icon">📦</span>Приемка
+            </div>
+            <div class="menu-btn" onclick="openScreen('screen-issue')">
+                <span class="menu-icon">🤝</span>Выдача
+            </div>
+            <div class="menu-btn full-width" onclick="openScreen('screen-return')" style="border: 1px solid var(--danger);">
+                <span class="menu-icon">↩️</span>Возврат
+            </div>
+            <div class="menu-btn full-width" onclick="openScreen('screen-stats')">
+                <span class="menu-icon">📊</span>Статистика
+            </div>
+        </div>
     </div>
 
-    <div class="order-list" id="orders-container"></div>
+    <div id="screen-receive" class="screen">
+        <button class="scan-btn" onclick="openCamera('receive_id')">📷 Отсканировать заказ</button>
+        <div class="form-group">
+            <label>Или введите номер заказа (ШК) вручную:</label>
+            <input type="text" id="receive_id" placeholder="Например: ORD-1050" />
+        </div>
+        <div class="form-group">
+            <label>Укажите ячейку размещения:</label>
+            <input type="text" id="receive_cell" placeholder="Например: A-12" />
+        </div>
+        <button class="action-btn" onclick="processReceive()">✅ Принять и Разместить</button>
+    </div>
 
-    <div class="fab-scanner" onclick="openGlobalScanner()">📷</div>
+    <div id="screen-issue" class="screen">
+        <button class="scan-btn" onclick="openCamera('issue_id')">📷 Отсканировать для выдачи</button>
+        <div class="form-group">
+            <label>Или введите номер заказа вручную:</label>
+            <input type="text" id="issue_id" placeholder="Номер заказа" />
+        </div>
+        <button class="action-btn" onclick="processIssue()">✅ Подтвердить выдачу</button>
+    </div>
+
+    <div id="screen-return" class="screen">
+        <button class="scan-btn" onclick="openCamera('return_id')">📷 Отсканировать заказ</button>
+        <div class="form-group">
+            <label>Номер заказа:</label>
+            <input type="text" id="return_id" placeholder="Номер заказа" />
+        </div>
+        <div class="form-group">
+            <label>Причина возврата:</label>
+            <select id="return_reason">
+                <option value="Не тот товар">Не тот товар</option>
+                <option value="Брак">Брак</option>
+                <option value="Не хватает товара">Не хватает товара</option>
+                <option value="Отказ клиента">Отказ клиента / Передумал</option>
+                <option value="Истек срок хранения">Истек срок хранения</option>
+            </select>
+        </div>
+        <button class="action-btn danger" onclick="processReturn()">Оформить возврат</button>
+    </div>
+
+    <div id="screen-stats" class="screen">
+        <div class="stat-tabs">
+            <div class="stat-tab active" id="tab-ARRIVED_AT_PVZ" onclick="renderStats('ARRIVED_AT_PVZ')">На полке</div>
+            <div class="stat-tab" id="tab-SHIPPED" onclick="renderStats('SHIPPED')">В пути</div>
+            <div class="stat-tab" id="tab-COMPLETED" onclick="renderStats('COMPLETED')">Выданы</div>
+            <div class="stat-tab" id="tab-RETURNED" onclick="renderStats('RETURNED')">Возвраты</div>
+        </div>
+        <div id="stats-container"></div>
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.ready();
+
+        tg.BackButton.onClick(() => { openScreen('screen-main'); });
 
         // --- ВАШИ КЛЮЧИ ---
         const SUPABASE_URL = 'https://ysvogudznyuszssdriih.supabase.co'; 
@@ -107,12 +252,11 @@
 
         let supabaseClient = null;
         let allOrders = [];
-        let currentFilter = 'SHIPPED'; 
 
         async function authenticate() {
             try {
                 const initData = tg.initData;
-                if (!initData) { document.getElementById('status-text').innerText = 'Откройте в Telegram'; return; }
+                if (!initData) { document.getElementById('operator-name').innerText = 'Откройте в Telegram'; return; }
 
                 const response = await fetch(`${SUPABASE_URL}/functions/v1/auth`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -126,177 +270,236 @@
                     global: { headers: { Authorization: `Bearer ${data.token}` } }
                 });
 
-                const tokenPayload = JSON.parse(atob(data.token.split('.')[1]));
-                document.getElementById('status-text').innerText = `✅ Онлайн (Роль: ${tokenPayload.role})`;
+                const tgId = tg.initDataUnsafe?.user?.id;
+                if (tgId) {
+                    const { data: manager } = await supabaseClient
+                        .from('managers')
+                        .select('name, pvz_codes')
+                        .eq('telegram_id', tgId)
+                        .single();
+
+                    if (manager) {
+                        let pvzLabel = 'ПВЗ';
+                        if (Array.isArray(manager.pvz_codes) && manager.pvz_codes.length > 0) {
+                            pvzLabel = `ПВЗ ${manager.pvz_codes[0]}`;
+                        } else if (typeof manager.pvz_codes === 'string') {
+                            pvzLabel = `ПВЗ ${manager.pvz_codes.replace(/[^a-zA-Zа-яА-Я0-9-]/g, '')}`;
+                        }
+                        
+                        document.getElementById('header-title').innerText = pvzLabel;
+                        document.getElementById('operator-name').innerHTML = `👤 <b>${manager.name}</b>`;
+                        document.getElementById('mini-dashboard').style.display = 'grid';
+                    }
+                }
                 
-                loadOrders();
+                await fetchOrders();
             } catch (error) {
-                document.getElementById('status-text').innerText = `❌ Ошибка: ${error.message}`;
+                document.getElementById('operator-name').innerText = `❌ Ошибка`;
             }
         }
 
-        async function loadOrders() {
+        async function fetchOrders() {
             if (!supabaseClient) return;
-            tg.MainButton.showProgress();
             try {
-                // Загружаем только активные заказы
                 const { data, error } = await supabaseClient
                     .from('orders')
                     .select('*')
-                    .in('status', ['SHIPPED', 'ARRIVED_AT_PVZ'])
                     .order('order_id', { ascending: false });
 
                 if (error) throw error;
                 allOrders = data || [];
-                renderOrders();
+                
+                updateDashboard();
             } catch (error) {
-                tg.showAlert('Ошибка загрузки данных');
+                tg.showAlert('Ошибка загрузки базы: ' + error.message);
+            }
+        }
+
+        function updateDashboard() {
+            // Базовые счетчики
+            const shipped = allOrders.filter(o => o.status === 'SHIPPED').length;
+            const arrivedOrders = allOrders.filter(o => o.status === 'ARRIVED_AT_PVZ');
+            const arrived = arrivedOrders.length;
+            const placed = arrivedOrders.filter(o => o.cell && o.cell.trim() !== '').length;
+            const noCell = arrived - placed;
+
+            document.getElementById('dash-shipped').innerText = shipped;
+            document.getElementById('dash-arrived').innerText = arrived;
+            document.getElementById('dash-noplacement').innerText = noCell;
+            document.getElementById('dash-placed').innerText = placed;
+
+            // Логика сроков хранения
+            let age1 = 0, age3 = 0, age5 = 0, age7 = 0, ageMax = 0;
+            const now = new Date();
+
+            arrivedOrders.forEach(o => {
+                // Если нет даты создания, используем текущую для заглушки (хотя в Supabase она всегда есть)
+                const orderDate = new Date(o.created_at || now);
+                const diffTime = Math.abs(now - orderDate);
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); // Полные дни
+
+                if (diffDays <= 1) age1++;
+                else if (diffDays <= 3) age3++;
+                else if (diffDays <= 5) age5++;
+                else if (diffDays <= 7) age7++;
+                else ageMax++;
+            });
+
+            document.getElementById('age-1').innerText = age1;
+            document.getElementById('age-3').innerText = age3;
+            document.getElementById('age-5').innerText = age5;
+            document.getElementById('age-7').innerText = age7;
+            document.getElementById('age-max').innerText = ageMax;
+        }
+
+        function openScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            if (screenId === 'screen-main') {
+                tg.BackButton.hide();
+                fetchOrders(); 
+            } else {
+                tg.BackButton.show();
+                document.querySelectorAll('input').forEach(input => input.value = '');
+                
+                if (screenId === 'screen-stats') {
+                    renderStats('ARRIVED_AT_PVZ');
+                }
+            }
+        }
+
+        function openCamera(targetInputId) {
+            tg.showScanQrPopup({ text: "Отсканируйте ШК" }, function(scannedText) {
+                tg.HapticFeedback.notificationOccurred('success');
+                document.getElementById(targetInputId).value = scannedText;
+                return true;
+            });
+        }
+
+        // --- БИЗНЕС ЛОГИКА ---
+
+        async function processReceive() {
+            const orderId = document.getElementById('receive_id').value.trim();
+            const cell = document.getElementById('receive_cell').value.trim();
+
+            if (!orderId || !cell) return tg.showAlert("Заполните номер заказа и ячейку!");
+
+            tg.MainButton.showProgress();
+            try {
+                const order = allOrders.find(o => o.order_id === orderId || o.sku === orderId);
+                const targetId = order ? order.order_id : orderId; 
+
+                const { error } = await supabaseClient.from('orders')
+                    .update({ status: 'ARRIVED_AT_PVZ', cell: cell })
+                    .eq('order_id', targetId);
+                
+                if (error) throw error;
+
+                await fetchOrders(); 
+                tg.HapticFeedback.notificationOccurred('success');
+                tg.showAlert(`Заказ ${targetId} принят в ячейку ${cell}`);
+                
+                document.getElementById('receive_id').value = '';
+                document.getElementById('receive_cell').value = '';
+            } catch (err) {
+                tg.showAlert("Ошибка: " + err.message);
             } finally {
                 tg.MainButton.hideProgress();
             }
         }
 
-        // Общая функция обновления базы данных
-        async function updateOrderData(orderId, updates, successMsg) {
-            tg.HapticFeedback.impactOccurred('medium');
+        async function processIssue() {
+            const orderId = document.getElementById('issue_id').value.trim();
+            if (!orderId) return tg.showAlert("Введите номер заказа!");
+
+            tg.MainButton.showProgress();
             try {
-                const { error } = await supabaseClient.from('orders').update(updates).eq('order_id', orderId);
-                if (error) throw error;
-                loadOrders(); // Перезагружаем интерфейс
-                if (successMsg) tg.showAlert(successMsg);
-            } catch (error) {
-                tg.showAlert('Ошибка: ' + error.message);
-            }
-        }
+                const order = allOrders.find(o => o.order_id === orderId || o.sku === orderId);
+                if (!order) {
+                    tg.MainButton.hideProgress();
+                    return tg.showAlert("Заказ не найден в вашей базе!");
+                }
+                if (order.status !== 'ARRIVED_AT_PVZ') {
+                    tg.MainButton.hideProgress();
+                    return tg.showAlert(`Нельзя выдать! Текущий статус заказа: ${order.status}`);
+                }
 
-        function switchTab(tabId) {
-            currentFilter = tabId;
-            document.getElementById('tab-shipped').classList.toggle('active', tabId === 'SHIPPED');
-            document.getElementById('tab-placement').classList.toggle('active', tabId === 'PLACEMENT');
-            document.getElementById('tab-ready').classList.toggle('active', tabId === 'READY');
-            renderOrders();
-        }
-
-        function renderOrders() {
-            const container = document.getElementById('orders-container');
-            container.innerHTML = '';
-
-            // Группируем по логике
-            const shipped = allOrders.filter(o => o.status === 'SHIPPED');
-            const placement = allOrders.filter(o => o.status === 'ARRIVED_AT_PVZ' && !o.cell);
-            const ready = allOrders.filter(o => o.status === 'ARRIVED_AT_PVZ' && o.cell);
-            
-            document.getElementById('count-shipped').innerText = shipped.length;
-            document.getElementById('count-placement').innerText = placement.length;
-            document.getElementById('count-ready').innerText = ready.length;
-
-            // Выбираем текущий массив для отрисовки
-            let displayList = currentFilter === 'SHIPPED' ? shipped : currentFilter === 'PLACEMENT' ? placement : ready;
-
-            if (displayList.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:var(--hint-color); margin-top:30px;">Нет заказов</p>`;
-                return;
-            }
-
-            displayList.forEach(order => {
-                const card = document.createElement('div');
-                card.className = 'card';
+                const { error } = await supabaseClient.from('orders')
+                    .update({ status: 'COMPLETED' })
+                    .eq('order_id', order.order_id);
                 
-                let badgeClass, badgeText, actionHtml, cellHtml = '';
+                if (error) throw error;
 
-                if (currentFilter === 'SHIPPED') {
-                    badgeClass = 'shipped'; badgeText = 'Ожидает приемки';
-                    actionHtml = `<button class="action-btn outline" onclick="updateOrderData('${order.order_id}', {status: 'ARRIVED_AT_PVZ'})">📦 Принять на баланс ПВЗ</button>`;
-                } else if (currentFilter === 'PLACEMENT') {
-                    badgeClass = 'placement'; badgeText = 'Нужна ячейка';
-                    actionHtml = `<button class="action-btn outline" onclick="promptCell('${order.order_id}')">📍 Указать ячейку</button>`;
-                } else {
-                    badgeClass = 'ready'; badgeText = 'Готов к выдаче';
-                    cellHtml = `<div class="info-row" style="margin-top:10px;"><span>ЯЧЕЙКА:</span> <span class="cell-highlight">${order.cell}</span></div>`;
-                    actionHtml = `<button class="action-btn secure" onclick="requireScanForIssue('${order.order_id}', '${order.sku}')">📷 Скан для выдачи</button>`;
-                }
-
-                card.innerHTML = `
-                    <div class="card-header">
-                        <div class="order-id">${order.order_id}</div>
-                        <div class="badge ${badgeClass}">${badgeText}</div>
-                    </div>
-                    <div class="info-row"><span>Клиент:</span> <b>${order.client_name || 'Не указан'}</b></div>
-                    <div class="info-row"><span>Телефон:</span> +${order.phone || '---'}</div>
-                    <div class="info-row"><span>SKU:</span> ${order.sku} (x${order.qty || 1})</div>
-                    ${cellHtml}
-                    ${actionHtml}
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        // --- ЛОГИКА РАЗМЕЩЕНИЯ В ЯЧЕЙКУ ---
-        function promptCell(orderId) {
-            // Вызываем системное окно для ввода ячейки (или сканирования аппаратным сканером)
-            const cell = prompt(`Размещение заказа ${orderId}\nВведите или отсканируйте номер ячейки:`, "");
-            if (cell && cell.trim() !== "") {
-                updateOrderData(orderId, { cell: cell.trim() });
+                await fetchOrders(); 
+                tg.HapticFeedback.notificationOccurred('success');
+                tg.showAlert(`✅ Заказ ${order.order_id} выдан клиенту!`);
+                openScreen('screen-main');
+            } catch (err) {
+                tg.showAlert("Ошибка: " + err.message);
+            } finally {
+                tg.MainButton.hideProgress();
             }
         }
 
-        // --- ОБЯЗАТЕЛЬНЫЙ СКАН ПЕРЕД ВЫДАЧЕЙ ---
-        function requireScanForIssue(orderId, sku) {
-            tg.showScanQrPopup({ text: `Выдача ${orderId}. Отсканируйте ШК товара` }, function(scannedText) {
-                if (scannedText === orderId || scannedText === sku) {
-                    tg.HapticFeedback.notificationOccurred('success');
-                    // Закрываем сканер и через 300мс открываем меню выдачи
-                    setTimeout(() => showIssueMenu(orderId), 300);
-                    return true; 
-                } else {
-                    tg.HapticFeedback.notificationOccurred('error');
-                    tg.showAlert(`❌ Неверный товар!\nОжидался: ${orderId} или ${sku}\nВы отсканировали: ${scannedText}`);
-                    return true;
-                }
-            });
-        }
+        async function processReturn() {
+            const orderId = document.getElementById('return_id').value.trim();
+            const reason = document.getElementById('return_reason').value;
 
-        // --- МЕНЮ ВЫДАЧИ / ВОЗВРАТА ---
-        function showIssueMenu(orderId) {
-            // Нативное всплывающее меню Telegram снизу экрана
-            tg.showPopup({
-                title: `Заказ ${orderId} подтвержден`,
-                message: `Выберите дальнейшее действие:`,
-                buttons: [
-                    { id: 'issue', type: 'default', text: '✅ Выдать клиенту' },
-                    { id: 'return', type: 'destructive', text: '❌ Оформить возврат' },
-                    { type: 'cancel' }
-                ]
-            }, function(buttonId) {
-                if (buttonId === 'issue') {
-                    updateOrderData(orderId, { status: 'COMPLETED' }, '🎉 Заказ выдан!');
-                } else if (buttonId === 'return') {
-                    const reason = prompt("Укажите причину возврата (Брак, Отказ, Истек срок):", "Отказ");
-                    if (reason && reason.trim() !== "") {
-                        updateOrderData(orderId, { status: 'RETURNED', return_reason: reason.trim() }, '🔄 Возврат оформлен');
+            if (!orderId) return tg.showAlert("Введите номер заказа!");
+
+            tg.showConfirm(`Оформить возврат заказа ${orderId}? Причина: "${reason}"`, async function(confirmed) {
+                if (confirmed) {
+                    tg.MainButton.showProgress();
+                    try {
+                        const { error } = await supabaseClient.from('orders')
+                            .update({ status: 'RETURNED', return_reason: reason })
+                            .eq('order_id', orderId);
+                        
+                        if (error) throw error;
+
+                        await fetchOrders(); 
+                        tg.HapticFeedback.notificationOccurred('error'); 
+                        tg.showAlert(`❌ Возврат оформлен.`);
+                        openScreen('screen-main');
+                    } catch (err) {
+                        tg.showAlert("Ошибка: " + err.message);
+                    } finally {
+                        tg.MainButton.hideProgress();
                     }
                 }
             });
         }
 
-        // --- ГЛОБАЛЬНЫЙ СКАНЕР (ДЛЯ ПРИЕМКИ ЯЩИКОВ ИЛИ ПОИСКА) ---
-        function openGlobalScanner() {
-            tg.showScanQrPopup({ text: "Сканируйте тарный ящик или заказ" }, function(scannedText) {
-                const orderByBox = allOrders.filter(o => o.box_id === scannedText && o.status === 'SHIPPED');
-                if (orderByBox.length > 0) {
-                    tg.showConfirm(`Принять тарный ящик ${scannedText}? В нем ${orderByBox.length} заказов.`, async function(confirmed) {
-                        if(confirmed) {
-                            tg.MainButton.showProgress();
-                            for(let order of orderByBox) {
-                                await supabaseClient.from('orders').update({ status: 'ARRIVED_AT_PVZ' }).eq('order_id', order.order_id);
-                            }
-                            loadOrders();
-                        }
-                    });
-                    return true;
-                } 
-                tg.showAlert(`Штрихкод ${scannedText} не найден или уже обработан.`);
-                return true;
+        function renderStats(statusFilter) {
+            document.querySelectorAll('.stat-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab-${statusFilter}`).classList.add('active');
+
+            const container = document.getElementById('stats-container');
+            container.innerHTML = '';
+
+            const filtered = allOrders.filter(o => o.status === statusFilter);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:var(--hint-color); margin-top:20px;">Нет данных</p>`;
+                return;
+            }
+
+            filtered.forEach(order => {
+                let extraInfo = '';
+                if (statusFilter === 'ARRIVED_AT_PVZ') extraInfo = `Ячейка: <span class="cell-badge">${order.cell || 'Нет'}</span>`;
+                if (statusFilter === 'RETURNED') extraInfo = `Причина: <b>${order.return_reason || 'Не указана'}</b>`;
+                
+                container.innerHTML += `
+                    <div class="order-card">
+                        <div class="order-card-header">
+                            <span>${order.order_id}</span>
+                            <span style="font-size:12px; font-weight:normal; color:var(--hint-color)">Арт: ${order.sku || '---'}</span>
+                        </div>
+                        <div>Товар: ${order.client_name || 'Неизвестно'} (x${order.qty || 1})</div>
+                        <div class="sub">${extraInfo}</div>
+                    </div>
+                `;
             });
         }
 

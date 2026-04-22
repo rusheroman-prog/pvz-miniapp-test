@@ -597,7 +597,103 @@ function showApp() {
   tg.BackButton.onClick(() => nav("scr-main"));
   loadDashboard();
 }
+// ... (начало скрипта с инициализацией остается прежним)
 
+// НОВЫЙ ФУНКЦИОНАЛ: СБОРКА
+async function openPickingScreen() {
+    nav('scr-pick-list'); // Переходим на экран списка заказов для сборки
+    const { data, error } = await db
+        .from('customer_orders')
+        .select('*')
+        .eq('status', 'NEW'); // Только новые заказы
+
+    const list = document.getElementById('stat-list'); // Используем контейнер для списка
+    list.innerHTML = '<h3>Заказы на сборку</h3>';
+    
+    if(!data.length) {
+        list.innerHTML += '<p>Нет новых заказов</p>';
+        return;
+    }
+
+    data.forEach(order => {
+        list.innerHTML += `
+            <div class="order-item" onclick="startOrderPicking('${order.id}', '${order.external_id}')">
+                <div class="order-item-head"><span>📦 Заказ ${order.external_id}</span></div>
+                <div class="order-item-sub">Нажми, чтобы начать сборку</div>
+            </div>
+        `;
+    });
+}
+
+async function startOrderPicking(orderUuid, displayId) {
+    nav('scr-picking-process');
+    document.getElementById('header-title').innerText = `Сборка ${displayId}`;
+
+    // Запрос с "джойном" адреса ячейки
+    const { data: items, error } = await db
+        .from('order_items')
+        .select(`
+            *,
+            warehouse_stock (cell)
+        `)
+        .eq('order_id', orderUuid);
+
+    // Сортируем по адресу (ячейке), чтобы сборщик шел по маршруту
+    const sortedItems = items.sort((a, b) => {
+        const cellA = a.warehouse_stock?.cell || 'ZZZ';
+        const cellB = b.warehouse_stock?.cell || 'ZZZ';
+        return cellA.localeCompare(cellB);
+    });
+
+    renderPickingList(sortedItems, orderUuid);
+}
+
+function renderPickingList(items, orderUuid) {
+    const cont = document.getElementById('stat-list');
+    cont.innerHTML = '';
+
+    items.forEach(item => {
+        const cell = item.warehouse_stock?.cell || 'НЕТ АДРЕСА';
+        cont.innerHTML += `
+            <div class="card" style="border-left: 5px solid ${cell === 'НЕТ АДРЕСА' ? 'red' : 'var(--blue)'}">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-size:18px; font-weight:800;">📍 ${cell}</div>
+                        <div style="font-size:14px; margin-top:4px;">${item.item_name}</div>
+                        <div style="font-size:12px; color:var(--tg-hint)">SKU: ${item.sku} | Размер: ${item.size}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:20px; font-weight:700;">x${item.qty}</div>
+                        <button class="btn success" style="padding:8px; font-size:12px; margin-top:5px;" 
+                                onclick="markPicked('${item.id}', '${orderUuid}')">ОК</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+}
+
+async function markPicked(itemId, orderUuid) {
+    tg.HapticFeedback.impactOccurred('light');
+    // Помечаем товар как собранный
+    await db.from('order_items').update({ picked_qty: 1 }).eq('id', itemId);
+    
+    // Проверяем, всё ли собрано в заказе
+    const { data: remaining } = await db.from('order_items')
+        .select('id')
+        .eq('order_id', orderUuid)
+        .eq('picked_qty', 0);
+
+    if(remaining.length === 0) {
+        // Если всё собрано - меняем статус заказа
+        await db.from('customer_orders').update({ status: 'PICKED' }).eq('id', orderUuid);
+        tg.showAlert("✅ Заказ полностью собран!");
+        nav('scr-main');
+    } else {
+        // Обновляем текущий список
+        startOrderPicking(orderUuid, "..."); 
+    }
+}
 // ════════════════════════════════════════════════
 // ДАШБОРД (точечные счётчики, а не SELECT *)
 // ════════════════════════════════════════════════

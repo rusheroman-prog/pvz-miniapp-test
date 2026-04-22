@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Uzum PVZ — Операции</title>
+  <title>Uzum PVZ PRO — Контроль</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -13,67 +13,78 @@
       --tg-hint: var(--tg-theme-hint-color, #999999);
       --tg-btn: var(--tg-theme-button-color, #7000FF);
       --tg-second: var(--tg-theme-secondary-bg-color, #f4f4f5);
-      --red: #ff3b30; --green: #34c759; --blue: #007aff;
+      --radius: 16px;
     }
-    body { font-family: -apple-system, system-ui, sans-serif; background: var(--tg-second); color: var(--tg-text); margin: 0; padding-bottom: 90px; }
+    body { font-family: -apple-system, system-ui, sans-serif; background: var(--tg-second); color: var(--tg-text); margin: 0; padding-bottom: 100px; }
     
-    .header { background: var(--tg-bg); padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-    .header h1 { font-size: 17px; margin: 0; font-weight: 800; }
-
-    .screen { display: none; padding: 15px; }
+    .header { background: var(--tg-bg); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .header h1 { font-size: 18px; margin: 0; font-weight: 800; }
+    
+    .screen { display: none; padding: 16px; animation: slideUp 0.2s ease-out; }
     .screen.active { display: block; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Табы */
-    .tabs { display: flex; background: var(--tg-bg); padding: 5px; gap: 5px; position: sticky; top: 55px; z-index: 90; margin-bottom: 15px; }
-    .tab { flex: 1; padding: 10px; border: none; background: none; color: var(--tg-hint); font-weight: bold; font-size: 12px; cursor: pointer; border-radius: 8px; }
-    .tab.active { background: var(--tg-btn); color: white; }
+    /* Dashboard */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .tile { background: var(--tg-bg); padding: 20px; border-radius: var(--radius); text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.04); cursor: pointer; }
+    .tile:active { transform: scale(0.96); opacity: 0.8; }
+    .tile-icon { font-size: 32px; display: block; margin-bottom: 8px; }
+    .tile-label { font-weight: 800; font-size: 13px; text-transform: uppercase; }
 
-    /* Поиск/Сканер */
-    .action-bar { background: var(--tg-bg); padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; }
+    /* Блокирующее окно размещения */
+    #placement-overlay { 
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); 
+      display: none; align-items: center; justify-content: center; z-index: 20000; padding: 20px;
+    }
+    .modal { background: var(--tg-bg); width: 100%; border-radius: var(--radius); padding: 25px; box-sizing: border-box; }
+    .modal h2 { margin-top: 0; font-size: 20px; color: var(--tg-btn); }
 
-    /* Карточки */
-    .card { background: var(--tg-bg); padding: 16px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .card-title { font-weight: bold; font-size: 16px; margin-bottom: 5px; display: flex; justify-content: space-between; }
-    .card-info { font-size: 13px; color: var(--tg-hint); line-height: 1.4; }
-    
-    /* Кнопки действий */
-    .btn-group { display: flex; gap: 8px; margin-top: 12px; }
-    .btn-sm { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; }
-    .btn-green { background: var(--green); color: white; }
-    .btn-blue { background: var(--blue); color: white; }
-    .btn-red { background: var(--red); color: white; }
-    
-    .empty { text-align: center; padding: 40px; color: var(--tg-hint); }
+    /* UI Элементы */
+    .input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; margin-bottom: 15px; background: var(--tg-bg); color: var(--tg-text); }
+    .btn-main { background: var(--tg-btn); color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; font-weight: 800; font-size: 16px; }
+    .card { background: var(--tg-bg); padding: 16px; border-radius: 14px; margin-bottom: 10px; }
+    .back-btn { background: none; border: none; color: var(--tg-btn); font-weight: bold; margin-bottom: 15px; cursor: pointer; }
+
+    .scan-fab { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--tg-btn); color: white; padding: 16px 32px; border-radius: 40px; font-weight: 900; box-shadow: 0 8px 24px rgba(112,0,255,0.3); border: none; z-index: 10000; }
   </style>
 </head>
 <body>
 
 <div class="header">
   <h1 id="h-title">UZUM PVZ</h1>
-  <button onclick="resetPvz()" style="font-size: 10px; border: none; background: #eee; padding: 4px 8px; border-radius: 5px;">Сменить ПВЗ</button>
+  <button onclick="resetPvz()" style="font-size: 11px; border: none; background: #eee; padding: 5px 10px; border-radius: 8px;">Сброс</button>
 </div>
 
 <div id="scr-select" class="screen">
-  <input type="text" id="pvz-search" class="input" placeholder="Поиск ПВЗ..." oninput="filterPvz()">
+  <input type="text" id="pvz-search" class="input" placeholder="Поиск пункта..." oninput="filterPvz()">
   <div id="pvz-list"></div>
 </div>
 
-<div id="scr-main" class="screen">
-  <div class="tabs">
-    <button class="tab active" onclick="setTab('inbound', this)">ПРИЕМКА</button>
-    <button class="tab" onclick="setTab('stock', this)">СКЛАД</button>
-    <button class="tab" onclick="setTab('outbound', this)">ВЫДАЧА</button>
-    <button class="tab" onclick="setTab('return', this)">ВОЗВРАТ</button>
+<div id="scr-dash" class="screen">
+  <div class="grid">
+    <div class="tile" onclick="openMode('inbound')"><span class="tile-icon">📥</span><span class="tile-label">Приемка</span></div>
+    <div class="tile" onclick="openMode('stock')"><span class="tile-icon">🏠</span><span class="tile-label">Склад</span></div>
+    <div class="tile" onclick="openMode('outbound')"><span class="tile-icon">🤝</span><span class="tile-label">Выдача</span></div>
+    <div class="tile" onclick="openMode('return')"><span class="tile-icon">🔄</span><span class="tile-label">Возврат</span></div>
   </div>
-
-  <div class="action-bar">
-    <input type="text" id="main-scan" class="input" placeholder="Отсканируйте штрихкод заказа..." onkeydown="handleScan(event)">
-    <div style="font-size: 11px; color: var(--tg-hint); margin-top: 8px; text-align: center;">Введите ID заказа и нажмите Enter для быстрого действия</div>
-  </div>
-
-  <div id="list-container"></div>
 </div>
+
+<div id="scr-list" class="screen">
+  <button class="back-btn" onclick="showScreen('dash')">← Назад</button>
+  <h2 id="mode-title">Заказы</h2>
+  <div id="items-container"></div>
+</div>
+
+<div id="placement-overlay">
+  <div class="modal">
+    <h2>Размещение заказа</h2>
+    <p id="pending-order-info" style="margin-bottom: 20px; font-weight: 600;"></p>
+    <input type="text" id="cell-input" class="input" placeholder="Номер ячейки (напр. А-15)" autocomplete="off">
+    <button class="btn-main" onclick="confirmPlacement()">ПОДТВЕРДИТЬ</button>
+  </div>
+</div>
+
+<button class="scan-fab" id="main-scan-btn" onclick="startScan()">📷 СКАНИРОВАТЬ</button>
 
 <script>
   const tg = window.Telegram.WebApp; tg.expand();
@@ -81,140 +92,130 @@
   const S_KEY = "sb_publishable_kU91fqnkt80hbLcVEms6oA_eXKVzY2A";
   const db = window.supabase.createClient(S_URL, S_KEY);
 
-  let currentTab = 'inbound';
-  let branches = [];
+  let currentMode = 'dash';
   let myPvz = localStorage.getItem('my_pvz_code');
+  let branches = [];
+  let pendingOrder = null; // Для блокирующего флоу
 
   async function init() {
     if (!myPvz) {
+      document.getElementById('main-scan-btn').style.display = 'none';
       showScreen('select');
-      await loadBranches();
+      const { data } = await db.from('branches').select('*');
+      branches = data || [];
+      renderBranches(branches);
     } else {
-      showScreen('main');
       document.getElementById('h-title').innerText = `ПВЗ ${myPvz}`;
-      loadOrders();
-    }
-  }
-
-  // --- ЛОГИКА ПВЗ ---
-  async function loadBranches() {
-    const { data } = await db.from('branches').select('*');
-    branches = data.map(b => ({ code: b.code || b['ПВЗ'], addr: b.full_address || b['Название филиала'] }));
-    renderBranches(branches);
-  }
-
-  function renderBranches(items) {
-    const cont = document.getElementById('pvz-list');
-    cont.innerHTML = items.map(b => `
-      <div class="card" onclick="setPvz('${b.code}')">
-        <div class="card-title" style="color:var(--tg-btn)">${b.code}</div>
-        <div class="card-info">${b.addr}</div>
-      </div>
-    `).join('');
-  }
-
-  function filterPvz() {
-    const q = document.getElementById('pvz-search').value.toLowerCase();
-    renderBranches(branches.filter(b => b.code.toLowerCase().includes(q) || b.addr.toLowerCase().includes(q)));
-  }
-
-  function setPvz(code) { localStorage.setItem('my_pvz_code', code); location.reload(); }
-  function resetPvz() { localStorage.removeItem('my_pvz_code'); location.reload(); }
-
-  // --- ЛОГИКА ЗАКАЗОВ ---
-  function setTab(tab, el) {
-    currentTab = tab;
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    loadOrders();
-  }
-
-  async function loadOrders() {
-    const cont = document.getElementById('list-container');
-    cont.innerHTML = '<div class="empty">Загрузка...</div>';
-
-    let query = db.from('customer_orders').select('*').eq('branch_name', myPvz);
-
-    // Фильтруем в зависимости от вкладки
-    if (currentTab === 'inbound') query = query.in('status', ['SHIPPED', 'PACKED']);
-    else if (currentTab === 'stock') query = query.eq('status', 'ARRIVED_AT_PVZ');
-    else if (currentTab === 'outbound') query = query.eq('status', 'ARRIVED_AT_PVZ');
-    else if (currentTab === 'return') query = query.eq('status', 'RETURNED');
-
-    const { data, error } = await query.order('created_at', { ascending: false }).limit(50);
-
-    if (!data || !data.length) {
-        cont.innerHTML = `<div class="empty">Вкладка ${currentTab} пуста</div>`;
-        return;
-    }
-
-    cont.innerHTML = data.map(o => `
-      <div class="card">
-        <div class="card-title">
-          <span>#${o.external_id}</span>
-          <span style="font-size:12px; color:var(--tg-btn)">${o.status}</span>
-        </div>
-        <div class="card-info">
-          Ячейка: <b>${o.pvz_cell || 'Не назначена'}</b><br>
-          Ящик отгрузки: ${o.box_id || '—'}
-        </div>
-        <div class="btn-group">
-          ${renderActions(o)}
-        </div>
-      </div>
-    `).join('');
-  }
-
-  function renderActions(o) {
-    if (currentTab === 'inbound') return `<button class="btn-sm btn-green" onclick="updateStatus('${o.id}', 'ARRIVED_AT_PVZ')">ПРИНЯТЬ</button>`;
-    if (currentTab === 'stock') return `<button class="btn-sm btn-blue" onclick="setCell('${o.id}')">ЯЧЕЙКА</button>`;
-    if (currentTab === 'outbound') return `<button class="btn-sm btn-green" onclick="updateStatus('${o.id}', 'COMPLETED')">ВЫДАТЬ</button> <button class="btn-sm btn-red" onclick="processReturn('${o.id}')">ВОЗВРАТ</button>`;
-    return '';
-  }
-
-  // --- ОПЕРАЦИИ ---
-  async function handleScan(e) {
-    if (e.key === 'Enter') {
-      const val = e.target.value.trim();
-      if (!val) return;
-      
-      // Авто-приемка или авто-выдача по штрихкоду
-      const { data: order } = await db.from('customer_orders').select('id, status').eq('external_id', val).eq('branch_name', myPvz).maybeSingle();
-      
-      if (!order) { alert("Заказ не найден на этом ПВЗ"); }
-      else {
-        if (order.status === 'SHIPPED' || order.status === 'PACKED') await updateStatus(order.id, 'ARRIVED_AT_PVZ');
-        else if (order.status === 'ARRIVED_AT_PVZ' && currentTab === 'outbound') await updateStatus(order.id, 'COMPLETED');
-        else alert(`Текущий статус заказа: ${order.status}`);
-      }
-      e.target.value = '';
-    }
-  }
-
-  async function updateStatus(id, newStatus) {
-    const { error } = await db.from('customer_orders').update({ status: newStatus }).eq('id', id);
-    if (!error) { tg.HapticFeedback.notificationOccurred('success'); loadOrders(); }
-  }
-
-  async function setCell(id) {
-    const cell = prompt("Введите номер ячейки (например, 12-А):");
-    if (cell) {
-      const { error } = await db.from('customer_orders').update({ pvz_cell: cell }).eq('id', id);
-      if (!error) loadOrders();
-    }
-  }
-
-  async function processReturn(id) {
-    const reason = prompt("Укажите причину возврата:");
-    if (reason) {
-      await db.from('customer_orders').update({ status: 'RETURNED', return_reason: reason }).eq('id', id);
-      loadOrders();
+      showScreen('dash');
     }
   }
 
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('scr-' + id).classList.add('active');
+    currentMode = id;
+  }
+
+  function openMode(mode) {
+    currentMode = mode;
+    const titles = { inbound: 'Ожидают приемку', stock: 'На полках', outbound: 'Выдача', return: 'Возврат' };
+    document.getElementById('mode-title').innerText = titles[mode];
+    showScreen('list');
+    loadOrders();
+  }
+
+  async function loadOrders() {
+    const cont = document.getElementById('items-container');
+    cont.innerHTML = '<div style="text-align:center; padding:20px;">Загрузка...</div>';
+    let query = db.from('customer_orders').select('*').eq('branch_name', myPvz);
+    
+    if (currentMode === 'inbound') query = query.in('status', ['SHIPPED', 'PACKED']);
+    else if (currentMode === 'stock' || currentMode === 'outbound') query = query.eq('status', 'ARRIVED_AT_PVZ');
+    else if (currentMode === 'return') query = query.eq('status', 'RETURNED');
+
+    const { data } = await query.order('created_at', { ascending: false });
+    cont.innerHTML = (data || []).map(o => `
+      <div class="card">
+        <div style="font-weight:900; font-size:16px;">#${o.external_id} <span style="float:right; color:var(--tg-btn)">${o.pvz_cell || ''}</span></div>
+        <div style="font-size:12px; color:var(--tg-hint); margin-top:4px;">${o.status} | Короб: ${o.box_id || '—'}</div>
+      </div>
+    `).join('') || '<div class="empty">Пусто</div>';
+  }
+
+  function startScan() {
+    if (pendingOrder) return; // Защита от открытия сканера во время размещения
+    tg.showScanQrPopup({ text: "Сканируйте ШК заказа" }, (barcode) => {
+      processBarcode(barcode.trim());
+      return true;
+    });
+  }
+
+  async function processBarcode(barcode) {
+    const { data: order } = await db.from('customer_orders').select('*').eq('external_id', barcode).eq('branch_name', myPvz).maybeSingle();
+    
+    if (!order) return tg.showAlert("Заказ не найден на этом ПВЗ");
+
+    // ПРИЕМКА: SHIPPED -> Размещение
+    if (order.status === 'SHIPPED' || order.status === 'PACKED') {
+      openPlacementModal(order);
+    } 
+    // ВЫДАЧА: ARRIVED_AT_PVZ -> COMPLETED
+    else if (order.status === 'ARRIVED_AT_PVZ' && currentMode !== 'inbound') {
+      tg.showConfirm(`Выдать заказ #${barcode} клиенту?`, async (ok) => {
+        if (ok) {
+          await db.from('customer_orders').update({ status: 'COMPLETED' }).eq('id', order.id);
+          tg.HapticFeedback.notificationOccurred('success');
+          loadOrders();
+        }
+      });
+    }
+  }
+
+  function openPlacementModal(order) {
+    pendingOrder = order;
+    document.getElementById('pending-order-info').innerText = `Заказ #${order.external_id}`;
+    document.getElementById('placement-overlay').style.display = 'flex';
+    document.getElementById('main-scan-btn').style.display = 'none'; // Блокируем сканер
+    setTimeout(() => document.getElementById('cell-input').focus(), 100);
+  }
+
+  async function confirmPlacement() {
+    const cell = document.getElementById('cell-input').value.trim();
+    if (!cell) return tg.showAlert("Введите номер ячейки!");
+
+    const { error } = await db.from('customer_orders')
+      .update({ status: 'ARRIVED_AT_PVZ', pvz_cell: cell })
+      .eq('id', pendingOrder.id);
+
+    if (!error) {
+      tg.HapticFeedback.notificationOccurred('success');
+      closePlacementModal();
+      loadOrders();
+    }
+  }
+
+  function closePlacementModal() {
+    pendingOrder = null;
+    document.getElementById('placement-overlay').style.display = 'none';
+    document.getElementById('main-scan-btn').style.display = 'block'; // Разблокируем
+    document.getElementById('cell-input').value = '';
+  }
+
+  // Справочник ПВЗ
+  function renderBranches(list) {
+    const cont = document.getElementById('pvz-list');
+    cont.innerHTML = list.map(b => `
+      <div class="card" onclick="setPvz('${b.code || b['ПВЗ']}')">
+        <div style="font-weight:900; color:var(--tg-btn)">${b.code || b['ПВЗ']}</div>
+        <div style="font-size:12px; color:var(--tg-hint)">${b.full_address || b['Название филиала']}</div>
+      </div>
+    `).join('');
+  }
+  function setPvz(code) { localStorage.setItem('my_pvz_code', code); location.reload(); }
+  function resetPvz() { localStorage.removeItem('my_pvz_code'); location.reload(); }
+  function filterPvz() {
+    const q = document.getElementById('pvz-search').value.toLowerCase();
+    renderBranches(branches.filter(b => (b.code || b['ПВЗ']).toLowerCase().includes(q)));
   }
 
   init();

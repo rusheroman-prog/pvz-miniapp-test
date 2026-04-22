@@ -3,507 +3,420 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Uzum PVZ - Терминал</title>
+    <title>Uzum PVZ - Visa Kapitalbank</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-color: var(--tg-theme-bg-color, #f4f4f5);
-            --text-color: var(--tg-theme-text-color, #222);
-            --hint-color: var(--tg-theme-hint-color, #999);
-            --card-bg: var(--tg-theme-secondary-bg-color, #ffffff);
-            --btn-bg: var(--tg-theme-button-color, #7000FF);
-            --btn-text: var(--tg-theme-button-text-color, #ffffff);
-            --danger: #E53935;
-            --success: #4CAF50;
-            --warning: #FF9800;
-            --info: #2196F3;
+            --tg-bg: var(--tg-theme-bg-color, #ffffff);
+            --tg-text: var(--tg-theme-text-color, #222222);
+            --tg-hint: var(--tg-theme-hint-color, #999999);
+            --tg-btn: var(--tg-theme-button-color, #7000FF);
+            --tg-btn-text: var(--tg-theme-button-text-color, #ffffff);
+            --tg-second: var(--tg-theme-secondary-bg-color, #f4f4f5);
+            --radius: 12px;
+            --green: #34c759;
+            --red: #ff3b30;
+            --orange: #ff9500;
+            --blue: #007aff;
         }
-        * { box-sizing: border-box; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color); color: var(--text-color);
-            margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--tg-bg); color: var(--tg-text); font-size: 16px;
         }
-        
-        /* Умная шапка с дашбордом */
+
+        /* ── Шапка и Дашборд ────────────────────────────────────── */
         .header {
-            padding: 15px 20px; background: var(--card-bg);
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-            position: sticky; top: 0; z-index: 50;
+            padding: 14px 16px; background: var(--tg-bg);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            position: sticky; top: 0; z-index: 100;
         }
-        .header-top {
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .header h2 { margin: 0; font-size: 18px; }
-        .operator-name { font-size: 14px; color: var(--hint-color); font-weight: 500; }
-        
-        .mini-dashboard {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px;
-        }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;}
+        .header h1 { font-size: 17px; font-weight: 700; }
+        .operator-name { font-size: 13px; color: var(--tg-hint); }
+
+        .mini-dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .dash-card {
-            background: var(--bg-color); padding: 10px; border-radius: 8px; 
-            font-size: 12px; font-weight: 500; color: var(--text-color);
-            border: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;
+            background: var(--tg-second); padding: 8px 12px; border-radius: 10px;
+            font-size: 11px; display: flex; justify-content: space-between; align-items: center;
         }
-        .dash-card .val { font-weight: 800; font-size: 14px; }
-        .dash-card.info { border-left: 3px solid var(--info); }
-        .dash-card.primary { border-left: 3px solid var(--btn-bg); }
-        .dash-card.warning { border-left: 3px solid var(--warning); }
-        .dash-card.success { border-left: 3px solid var(--success); }
+        .dash-card b { font-size: 13px; }
+        
+        .aging-row { 
+            grid-column: span 2; display: flex; gap: 4px; margin-top: 4px; 
+            padding: 6px; background: var(--tg-second); border-radius: 8px;
+        }
+        .age-dot { flex: 1; text-align: center; font-size: 9px; color: var(--tg-hint); }
+        .age-dot b { display: block; font-size: 11px; color: var(--tg-text); }
+        .age-dot.danger b { color: var(--red); }
 
-        /* Панель старения заказов */
-        .aging-panel {
-            grid-column: span 2; background: var(--bg-color); padding: 12px; 
-            border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); margin-top: 4px;
-        }
-        .aging-title {
-            font-size: 11px; color: var(--hint-color); margin-bottom: 8px; 
-            font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        .aging-bars {
-            display: flex; justify-content: space-between; gap: 5px;
-        }
-        .age-badge {
-            flex: 1; text-align: center; font-size: 10px; padding: 6px 0;
-            background: var(--card-bg); border-radius: 6px; border: 1px solid rgba(0,0,0,0.05);
-            color: var(--hint-color); display: flex; flex-direction: column; gap: 4px;
-        }
-        .age-badge b { font-size: 14px; color: var(--text-color); }
-        .age-badge.danger { background: #FFEBEE; border-color: #FFCDD2; color: var(--danger); }
-        .age-badge.danger b { color: var(--danger); }
-        .age-badge.alert { background: #FFF3E0; border-color: #FFE0B2; color: var(--warning); }
-        .age-badge.alert b { color: var(--warning); }
-
-        /* Экраны */
-        .screen { display: none; padding: 20px; }
+        /* ── Экраны ─────────────────────────────────────────────── */
+        .screen { display: none; padding: 16px; min-height: 80vh; }
         .screen.active { display: block; }
 
-        /* Главное меню */
-        .main-menu {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 5px;
+        /* ── Меню ───────────────────────────────────────────────── */
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .menu-card {
+            background: var(--tg-second); border-radius: var(--radius);
+            padding: 24px 16px; text-align: center; cursor: pointer;
+            transition: transform 0.1s; border: 2px solid transparent;
         }
-        .menu-btn {
-            background: var(--card-bg); border: 1px solid rgba(0,0,0,0.05);
-            border-radius: 16px; padding: 25px 15px; text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03); cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: var(--text-color); font-weight: 600; font-size: 15px;
-        }
-        .menu-btn:active { transform: scale(0.98); }
-        .menu-btn.full-width { grid-column: span 2; }
-        .menu-icon { font-size: 32px; margin-bottom: 10px; }
+        .menu-card:active { transform: scale(0.97); }
+        .menu-card.accent { border-color: var(--tg-btn); }
+        .menu-card .icon { font-size: 32px; margin-bottom: 8px; }
+        .menu-card .label { font-size: 14px; font-weight: 600; }
 
-        /* Формы действий */
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 13px; color: var(--hint-color); margin-bottom: 5px; font-weight: 500;}
-        input, select {
-            width: 100%; padding: 14px; border-radius: 10px;
-            border: 1px solid rgba(0,0,0,0.1); background: var(--bg-color);
-            color: var(--text-color); font-size: 16px; outline: none;
-        }
-        input:focus, select:focus { border-color: var(--btn-bg); }
+        /* ── Формы и Инпуты ─────────────────────────────────────── */
+        .form-section { background: var(--tg-second); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+        .form-section h3 { font-size: 13px; font-weight: 700; color: var(--tg-hint); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;}
         
-        .action-btn {
-            background: var(--btn-bg); color: var(--btn-text);
-            border: none; padding: 16px; border-radius: 12px; width: 100%;
-            font-size: 16px; font-weight: bold; margin-top: 10px; cursor: pointer;
+        .input-row { display: flex; gap: 8px; margin-bottom: 12px; }
+        .field-input {
+            flex: 1; background: var(--tg-bg); border: 1.5px solid rgba(0,0,0,0.1);
+            border-radius: 10px; padding: 12px; font-size: 17px; color: var(--tg-text); outline: none;
         }
-        .action-btn.danger { background: var(--danger); }
+        .field-input:focus { border-color: var(--tg-btn); }
         
-        .scan-btn {
-            background: var(--card-bg); color: var(--btn-bg);
-            border: 2px dashed var(--btn-bg); padding: 16px; border-radius: 12px;
-            width: 100%; font-size: 16px; font-weight: bold; margin-bottom: 15px;
-            display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;
+        .cam-btn {
+            width: 48px; height: 48px; background: var(--tg-btn); color: white;
+            border: none; border-radius: 10px; font-size: 20px; display: flex; align-items: center; justify-content: center;
         }
 
-        /* Статистика */
-        .stat-tabs { display: flex; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; }
-        .stat-tab { 
-            padding: 8px 15px; background: var(--card-bg); border-radius: 20px; 
-            margin-right: 10px; white-space: nowrap; font-size: 13px; font-weight: 600;
-            color: var(--hint-color); border: 1px solid rgba(0,0,0,0.05); cursor: pointer;
+        .btn {
+            width: 100%; padding: 14px; background: var(--tg-btn); color: var(--tg-btn-text);
+            border: none; border-radius: var(--radius); font-size: 16px; font-weight: 600; cursor: pointer;
         }
-        .stat-tab.active { background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-bg); }
+        .btn.secondary { background: var(--tg-second); color: var(--tg-text); }
+        .btn.danger { background: var(--red); color: #fff; }
+        .btn.success { background: var(--green); color: #fff; }
+
+        /* ── Карточки результатов (как в вашем коде) ──────────── */
+        .result-card {
+            border-radius: var(--radius); padding: 16px; margin-bottom: 16px; display: none;
+        }
+        .result-card.visible { display: block; }
+        .result-card.ok { background: #e8f5e9; border: 1.5px solid var(--green); }
+        .result-card.err { background: #fce8e8; border: 1.5px solid var(--red); }
+        .result-card.info { background: #e3f2fd; border: 1.5px solid var(--blue); }
+        .rc-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+        .rc-body { font-size: 14px; opacity: 0.8; }
+
+        /* ── Специфические элементы (Ячейка и Причины) ─────────── */
+        .big-cell-display {
+            font-size: 42px; font-weight: 800; color: var(--blue);
+            text-align: center; padding: 20px 0; letter-spacing: 2px;
+        }
         
-        .order-card {
-            background: var(--card-bg); border-radius: 12px; padding: 15px;
-            margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); font-size: 14px;
+        .reason-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px;}
+        .reason-btn {
+            padding: 14px; background: var(--tg-bg); border: 1.5px solid rgba(0,0,0,0.1);
+            border-radius: 10px; text-align: left; font-size: 15px; cursor: pointer;
+            color: var(--tg-text);
         }
-        .order-card-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 8px; font-size: 15px;}
-        .order-card .sub { color: var(--hint-color); font-size: 12px; margin-top: 5px; }
-        .cell-badge { background: #FFE500; color: #000; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        .reason-btn.selected { border-color: var(--tg-btn); background: rgba(112, 0, 255, 0.05); }
+
+        /* ── Статистика ─────────────────────────────────────────── */
+        .stat-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; }
+        .stat-tab {
+            padding: 8px 16px; background: var(--tg-second); border-radius: 20px;
+            font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer;
+        }
+        .stat-tab.active { background: var(--tg-btn); color: #fff; }
+        
+        .order-item {
+            background: var(--tg-second); border-radius: 10px; padding: 12px; margin-bottom: 8px;
+        }
+        .order-item-head { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 4px; }
+        .order-item-sub { font-size: 12px; color: var(--tg-hint); }
     </style>
 </head>
 <body>
+
     <div class="header">
         <div class="header-top">
-            <h2 id="header-title">Терминал ПВЗ</h2>
-            <span class="operator-name" id="operator-name">Загрузка...</span>
+            <h1 id="pvz-title">ТАШ-TEST</h1>
+            <div class="operator-name" id="op-name">👤 Загрузка...</div>
         </div>
-        
-        <div class="mini-dashboard" id="mini-dashboard" style="display: none;">
-            <div class="dash-card info">
-                <span>🚚 В пути:</span> <span class="val" style="color: var(--info);" id="dash-shipped">0</span>
+        <div class="mini-dashboard">
+            <div class="dash-card"><span>🚚 В пути</span> <b id="d-shipped">0</b></div>
+            <div class="dash-card"><span>📦 Склад</span> <b id="d-arrived">0</b></div>
+            <div class="aging-row">
+                <div class="age-dot">до 1д <b id="a-1">0</b></div>
+                <div class="age-dot">1-3д <b id="a-3">0</b></div>
+                <div class="age-dot">3-5д <b id="a-5">0</b></div>
+                <div class="age-dot">5-7д <b id="a-7">0</b></div>
+                <div class="age-dot danger">>7д <b id="a-max">0</b></div>
             </div>
-            <div class="dash-card primary">
-                <span>📥 Принято:</span> <span class="val" style="color: var(--btn-bg);" id="dash-arrived">0</span>
+        </div>
+    </div>
+
+    <div id="scr-main" class="screen active">
+        <div class="menu-grid">
+            <div class="menu-card accent" onclick="nav('scr-rec')">
+                <div class="icon">📥</div>
+                <div class="label">Приёмка</div>
             </div>
-            <div class="dash-card warning">
-                <span>⏳ Без полки:</span> <span class="val" style="color: var(--warning);" id="dash-noplacement">0</span>
+            <div class="menu-card" onclick="nav('scr-iss')">
+                <div class="icon">📤</div>
+                <div class="label">Выдача</div>
             </div>
-            <div class="dash-card success">
-                <span>✅ Размещено:</span> <span class="val" style="color: var(--success);" id="dash-placed">0</span>
+            <div class="menu-card" onclick="nav('scr-ret')">
+                <div class="icon">↩️</div>
+                <div class="label">Возврат</div>
             </div>
-            
-            <div class="aging-panel">
-                <div class="aging-title">Срок хранения на ПВЗ (дней)</div>
-                <div class="aging-bars">
-                    <div class="age-badge">до 1<b id="age-1">0</b></div>
-                    <div class="age-badge">1-3<b id="age-3">0</b></div>
-                    <div class="age-badge">3-5<b id="age-5">0</b></div>
-                    <div class="age-badge alert">5-7<b id="age-7">0</b></div>
-                    <div class="age-badge danger">&gt;7<b id="age-max">0</b></div>
+            <div class="menu-card" onclick="nav('scr-stat')">
+                <div class="icon">📊</div>
+                <div class="label">Статистика</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="scr-rec" class="screen">
+        <div class="form-section">
+            <h3>Шаг 1 — Номер заказа</h3>
+            <div class="input-row">
+                <input type="text" id="rec-id" class="field-input" placeholder="Сканируйте или введите">
+                <button class="cam-btn" onclick="scan('rec-id', checkRec)">📷</button>
+            </div>
+            <button class="btn" onclick="checkRec()">Проверить заказ</button>
+        </div>
+
+        <div id="rec-res" class="result-card"></div>
+
+        <div id="rec-step2" style="display:none">
+            <div class="form-section">
+                <h3>Шаг 2 — Размещение</h3>
+                <input type="text" id="rec-cell" class="field-input" placeholder="Введите ячейку (напр. А-12)" style="margin-bottom:12px">
+                <button class="btn success" onclick="doRec()">✅ Принять и сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="scr-iss" class="screen">
+        <div class="form-section">
+            <h3>Поиск заказа клиента</h3>
+            <div class="input-row">
+                <input type="text" id="iss-id" class="field-input" placeholder="Номер заказа">
+                <button class="cam-btn" onclick="scan('iss-id', findIss)">📷</button>
+            </div>
+            <button class="btn" onclick="findIss()">Найти заказ</button>
+        </div>
+
+        <div id="iss-res" class="result-card"></div>
+
+        <div id="iss-confirm" style="display:none">
+            <div class="form-section">
+                <h3>Заказ на полке:</h3>
+                <div class="big-cell-display" id="iss-cell-val">---</div>
+                <button class="btn success" onclick="doIss()">✅ Подтвердить выдачу</button>
+                <button class="btn secondary" style="margin-top:8px" onclick="nav('scr-main')">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="scr-ret" class="screen">
+        <div class="form-section">
+            <h3>Оформление возврата</h3>
+            <div class="input-row">
+                <input type="text" id="ret-id" class="field-input" placeholder="Номер заказа">
+                <button class="cam-btn" onclick="scan('ret-id', checkRet)">📷</button>
+            </div>
+            <button class="btn" onclick="checkRet()">Найти для возврата</button>
+        </div>
+
+        <div id="ret-res" class="result-card"></div>
+
+        <div id="ret-step2" style="display:none">
+            <div class="form-section">
+                <h3>Укажите причину:</h3>
+                <div class="reason-list" id="reasons">
+                    <button class="reason-btn" onclick="selRet('Не тот товар', this)">Не тот товар</button>
+                    <button class="reason-btn" onclick="selRet('Брак / Повреждение', this)">Брак / Повреждение</button>
+                    <button class="reason-btn" onclick="selRet('Не хватает товара', this)">Не хватает товара</button>
+                    <button class="reason-btn" onclick="selRet('Отказ клиента', this)">Отказ клиента</button>
                 </div>
+                <button class="btn danger" style="margin-top:16px" onclick="doRet()">↩️ Оформить возврат</button>
             </div>
         </div>
     </div>
 
-    <div id="screen-main" class="screen active">
-        <div class="main-menu">
-            <div class="menu-btn" onclick="openScreen('screen-receive')">
-                <span class="menu-icon">📦</span>Приемка
-            </div>
-            <div class="menu-btn" onclick="openScreen('screen-issue')">
-                <span class="menu-icon">🤝</span>Выдача
-            </div>
-            <div class="menu-btn full-width" onclick="openScreen('screen-return')" style="border: 1px solid var(--danger);">
-                <span class="menu-icon">↩️</span>Возврат
-            </div>
-            <div class="menu-btn full-width" onclick="openScreen('screen-stats')">
-                <span class="menu-icon">📊</span>Статистика
-            </div>
-        </div>
-    </div>
-
-    <div id="screen-receive" class="screen">
-        <button class="scan-btn" onclick="openCamera('receive_id')">📷 Отсканировать заказ</button>
-        <div class="form-group">
-            <label>Или введите номер заказа (ШК) вручную:</label>
-            <input type="text" id="receive_id" placeholder="Например: ORD-1050" />
-        </div>
-        <div class="form-group">
-            <label>Укажите ячейку размещения:</label>
-            <input type="text" id="receive_cell" placeholder="Например: A-12" />
-        </div>
-        <button class="action-btn" onclick="processReceive()">✅ Принять и Разместить</button>
-    </div>
-
-    <div id="screen-issue" class="screen">
-        <button class="scan-btn" onclick="openCamera('issue_id')">📷 Отсканировать для выдачи</button>
-        <div class="form-group">
-            <label>Или введите номер заказа вручную:</label>
-            <input type="text" id="issue_id" placeholder="Номер заказа" />
-        </div>
-        <button class="action-btn" onclick="processIssue()">✅ Подтвердить выдачу</button>
-    </div>
-
-    <div id="screen-return" class="screen">
-        <button class="scan-btn" onclick="openCamera('return_id')">📷 Отсканировать заказ</button>
-        <div class="form-group">
-            <label>Номер заказа:</label>
-            <input type="text" id="return_id" placeholder="Номер заказа" />
-        </div>
-        <div class="form-group">
-            <label>Причина возврата:</label>
-            <select id="return_reason">
-                <option value="Не тот товар">Не тот товар</option>
-                <option value="Брак">Брак</option>
-                <option value="Не хватает товара">Не хватает товара</option>
-                <option value="Отказ клиента">Отказ клиента / Передумал</option>
-                <option value="Истек срок хранения">Истек срок хранения</option>
-            </select>
-        </div>
-        <button class="action-btn danger" onclick="processReturn()">Оформить возврат</button>
-    </div>
-
-    <div id="screen-stats" class="screen">
+    <div id="scr-stat" class="screen">
         <div class="stat-tabs">
-            <div class="stat-tab active" id="tab-ARRIVED_AT_PVZ" onclick="renderStats('ARRIVED_AT_PVZ')">На полке</div>
-            <div class="stat-tab" id="tab-SHIPPED" onclick="renderStats('SHIPPED')">В пути</div>
-            <div class="stat-tab" id="tab-COMPLETED" onclick="renderStats('COMPLETED')">Выданы</div>
-            <div class="stat-tab" id="tab-RETURNED" onclick="renderStats('RETURNED')">Возвраты</div>
+            <div class="stat-tab active" onclick="stat('ARRIVED_AT_PVZ', this)">На складе</div>
+            <div class="stat-tab" onclick="stat('SHIPPED', this)">В пути</div>
+            <div class="stat-tab" onclick="stat('COMPLETED', this)">Выданы</div>
+            <div class="stat-tab" onclick="stat('RETURNED', this)">Возврат</div>
         </div>
-        <div id="stats-container"></div>
+        <div id="stat-list"></div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.ready();
+        tg.BackButton.onClick(() => nav('scr-main'));
 
-        tg.BackButton.onClick(() => { openScreen('screen-main'); });
+        // КЛЮЧИ SUPABASE
+        const S_URL = "https://ysvogudznyuszssdriih.supabase.co";
+        const S_KEY = "sb_publishable_kU91fqnkt80hbLcVEms6oA_eXKVzY2A"; 
 
-        // --- ВАШИ КЛЮЧИ ---
-        const SUPABASE_URL = 'https://ysvogudznyuszssdriih.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'sb_publishable_kU91fqnkt80hbLcVEms6oA_eXKVzY2A'; 
-        // ------------------
+        let db = null;
+        let orders = [];
+        let curRetReason = "";
+        let curOrder = null;
 
-        let supabaseClient = null;
-        let allOrders = [];
-
-        async function authenticate() {
+        async function init() {
             try {
                 const initData = tg.initData;
-                if (!initData) { document.getElementById('operator-name').innerText = 'Откройте в Telegram'; return; }
-
-                const response = await fetch(`${SUPABASE_URL}/functions/v1/auth`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ initData: initData })
+                const resp = await fetch(`${S_URL}/functions/v1/auth`, {
+                    method: 'POST', body: JSON.stringify({ initData })
+                });
+                const { token } = await resp.json();
+                db = window.supabase.createClient(S_URL, S_KEY, {
+                    global: { headers: { Authorization: `Bearer ${token}` } }
                 });
 
-                if (!response.ok) throw new Error('Ошибка токена');
-
-                const data = await response.json();
-                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-                    global: { headers: { Authorization: `Bearer ${data.token}` } }
-                });
-
-                const tgId = tg.initDataUnsafe?.user?.id;
-                if (tgId) {
-                    const { data: manager } = await supabaseClient
-                        .from('managers')
-                        .select('name, pvz_codes')
-                        .eq('telegram_id', tgId)
-                        .single();
-
-                    if (manager) {
-                        let pvzLabel = 'ПВЗ';
-                        if (Array.isArray(manager.pvz_codes) && manager.pvz_codes.length > 0) {
-                            pvzLabel = `ПВЗ ${manager.pvz_codes[0]}`;
-                        } else if (typeof manager.pvz_codes === 'string') {
-                            pvzLabel = `ПВЗ ${manager.pvz_codes.replace(/[^a-zA-Zа-яА-Я0-9-]/g, '')}`;
-                        }
-                        
-                        document.getElementById('header-title').innerText = pvzLabel;
-                        document.getElementById('operator-name').innerHTML = `👤 <b>${manager.name}</b>`;
-                        document.getElementById('mini-dashboard').style.display = 'grid';
-                    }
+                // Грузим профиль
+                const { data: m } = await db.from('managers').select('*').eq('telegram_id', tg.initDataUnsafe.user.id).single();
+                if (m) {
+                    document.getElementById('op-name').innerHTML = `👤 <b>${m.name}</b>`;
+                    document.getElementById('pvz-title').innerText = Array.isArray(m.pvz_codes) ? m.pvz_codes[0] : m.pvz_codes;
                 }
-                
-                await fetchOrders();
-            } catch (error) {
-                document.getElementById('operator-name').innerText = `❌ Ошибка`;
-            }
+                load();
+            } catch (e) { console.error(e); }
         }
 
-        async function fetchOrders() {
-            if (!supabaseClient) return;
-            try {
-                const { data, error } = await supabaseClient
-                    .from('orders')
-                    .select('*')
-                    .order('order_id', { ascending: false });
-
-                if (error) throw error;
-                allOrders = data || [];
-                
-                updateDashboard();
-            } catch (error) {
-                tg.showAlert('Ошибка загрузки базы: ' + error.message);
-            }
+        async function load() {
+            const { data } = await db.from('orders').select('*');
+            orders = data || [];
+            updateDash();
         }
 
-        function updateDashboard() {
-            // Базовые счетчики
-            const shipped = allOrders.filter(o => o.status === 'SHIPPED').length;
-            const arrivedOrders = allOrders.filter(o => o.status === 'ARRIVED_AT_PVZ');
-            const arrived = arrivedOrders.length;
-            const placed = arrivedOrders.filter(o => o.cell && o.cell.trim() !== '').length;
-            const noCell = arrived - placed;
-
-            document.getElementById('dash-shipped').innerText = shipped;
-            document.getElementById('dash-arrived').innerText = arrived;
-            document.getElementById('dash-noplacement').innerText = noCell;
-            document.getElementById('dash-placed').innerText = placed;
-
-            // Логика сроков хранения
-            let age1 = 0, age3 = 0, age5 = 0, age7 = 0, ageMax = 0;
+        function updateDash() {
             const now = new Date();
+            let shipped = 0, arrived = 0, a1=0, a3=0, a5=0, a7=0, aMax=0;
 
-            arrivedOrders.forEach(o => {
-                // Если нет даты создания, используем текущую для заглушки (хотя в Supabase она всегда есть)
-                const orderDate = new Date(o.created_at || now);
-                const diffTime = Math.abs(now - orderDate);
-                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); // Полные дни
-
-                if (diffDays <= 1) age1++;
-                else if (diffDays <= 3) age3++;
-                else if (diffDays <= 5) age5++;
-                else if (diffDays <= 7) age7++;
-                else ageMax++;
+            orders.forEach(o => {
+                if(o.status === 'SHIPPED') shipped++;
+                if(o.status === 'ARRIVED_AT_PVZ') {
+                    arrived++;
+                    const diff = Math.floor((now - new Date(o.created_at)) / 86400000);
+                    if(diff <= 1) a1++; else if(diff <= 3) a3++; else if(diff <= 5) a5++; else if(diff <= 7) a7++; else aMax++;
+                }
             });
-
-            document.getElementById('age-1').innerText = age1;
-            document.getElementById('age-3').innerText = age3;
-            document.getElementById('age-5').innerText = age5;
-            document.getElementById('age-7').innerText = age7;
-            document.getElementById('age-max').innerText = ageMax;
+            document.getElementById('d-shipped').innerText = shipped;
+            document.getElementById('d-arrived').innerText = arrived;
+            document.getElementById('a-1').innerText = a1; document.getElementById('a-3').innerText = a3;
+            document.getElementById('a-5').innerText = a5; document.getElementById('a-7').innerText = a7;
+            document.getElementById('a-max').innerText = aMax;
         }
 
-        function openScreen(screenId) {
+        function nav(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
+            document.getElementById(id).classList.add('active');
+            tg.BackButton[id === 'scr-main' ? 'hide' : 'show']();
+            // Сброс всех состояний при переходе
+            document.getElementById('rec-step2').style.display = 'none';
+            document.getElementById('iss-confirm').style.display = 'none';
+            document.getElementById('ret-step2').style.display = 'none';
+            document.querySelectorAll('.result-card').forEach(r => r.style.display = 'none');
+            if(id === 'scr-stat') stat('ARRIVED_AT_PVZ', document.querySelector('.stat-tab'));
+            load();
+        }
+
+        function scan(inpId, cb) {
+            tg.showScanQrPopup({ text: "Сканируйте ШК" }, (txt) => {
+                document.getElementById(inpId).value = txt;
+                cb(); return true;
+            });
+        }
+
+        function res(id, type, t, b) {
+            const el = document.getElementById(id);
+            el.className = `result-card visible ${type}`;
+            el.innerHTML = `<div class="rc-title">${t}</div><div class="rc-body">${b}</div>`;
+        }
+
+        // ПРИЕМКА
+        async function checkRec() {
+            const id = document.getElementById('rec-id').value.trim();
+            curOrder = orders.find(o => o.order_id === id || o.sku === id);
+            if(!curOrder) return res('rec-res', 'err', '❌ Не найден', 'Заказ отсутствует в базе ожидания');
+            if(curOrder.status !== 'SHIPPED') return res('rec-res', 'info', 'ℹ️ Уже принят', `Заказ уже на ПВЗ в ячейке ${curOrder.cell || '?'}`);
             
-            if (screenId === 'screen-main') {
-                tg.BackButton.hide();
-                fetchOrders(); 
-            } else {
-                tg.BackButton.show();
-                document.querySelectorAll('input').forEach(input => input.value = '');
-                
-                if (screenId === 'screen-stats') {
-                    renderStats('ARRIVED_AT_PVZ');
-                }
-            }
+            res('rec-res', 'ok', '✅ Заказ найден', `Клиент: ${curOrder.client_name}<br>Товар: ${curOrder.sku}`);
+            document.getElementById('rec-step2').style.display = 'block';
+        }
+        async function doRec() {
+            const cell = document.getElementById('rec-cell').value.trim();
+            if(!cell) return tg.showAlert("Укажите ячейку!");
+            await db.from('orders').update({ status: 'ARRIVED_AT_PVZ', cell }).eq('order_id', curOrder.order_id);
+            tg.HapticFeedback.notificationOccurred('success');
+            nav('scr-main');
+            tg.showAlert("Принято!");
         }
 
-        function openCamera(targetInputId) {
-            tg.showScanQrPopup({ text: "Отсканируйте ШК" }, function(scannedText) {
-                tg.HapticFeedback.notificationOccurred('success');
-                document.getElementById(targetInputId).value = scannedText;
-                return true;
-            });
+        // ВЫДАЧА
+        async function findIss() {
+            const id = document.getElementById('iss-id').value.trim();
+            curOrder = orders.find(o => o.order_id === id || o.sku === id);
+            if(!curOrder) return res('iss-res', 'err', '❌ Заказ не найден', 'Проверьте номер заказа');
+            if(curOrder.status !== 'ARRIVED_AT_PVZ') return res('iss-res', 'err', '❌ Не готов', `Статус: ${curOrder.status}`);
+
+            res('iss-res', 'info', '✅ Найден на складе', `Клиент: ${curOrder.client_name}`);
+            document.getElementById('iss-cell-val').innerText = curOrder.cell || '???';
+            document.getElementById('iss-confirm').style.display = 'block';
+        }
+        async function doIss() {
+            await db.from('orders').update({ status: 'COMPLETED' }).eq('order_id', curOrder.order_id);
+            tg.HapticFeedback.notificationOccurred('success');
+            nav('scr-main');
+            tg.showAlert("Выдано!");
         }
 
-        // --- БИЗНЕС ЛОГИКА ---
-
-        async function processReceive() {
-            const orderId = document.getElementById('receive_id').value.trim();
-            const cell = document.getElementById('receive_cell').value.trim();
-
-            if (!orderId || !cell) return tg.showAlert("Заполните номер заказа и ячейку!");
-
-            tg.MainButton.showProgress();
-            try {
-                const order = allOrders.find(o => o.order_id === orderId || o.sku === orderId);
-                const targetId = order ? order.order_id : orderId; 
-
-                const { error } = await supabaseClient.from('orders')
-                    .update({ status: 'ARRIVED_AT_PVZ', cell: cell })
-                    .eq('order_id', targetId);
-                
-                if (error) throw error;
-
-                await fetchOrders(); 
-                tg.HapticFeedback.notificationOccurred('success');
-                tg.showAlert(`Заказ ${targetId} принят в ячейку ${cell}`);
-                
-                document.getElementById('receive_id').value = '';
-                document.getElementById('receive_cell').value = '';
-            } catch (err) {
-                tg.showAlert("Ошибка: " + err.message);
-            } finally {
-                tg.MainButton.hideProgress();
-            }
+        // ВОЗВРАТ
+        async function checkRet() {
+            const id = document.getElementById('ret-id').value.trim();
+            curOrder = orders.find(o => o.order_id === id || o.sku === id);
+            if(!curOrder) return res('ret-res', 'err', '❌ Не найден', 'Заказ не найден');
+            res('ret-res', 'info', '✅ Заказ найден', `Клиент: ${curOrder.client_name}`);
+            document.getElementById('ret-step2').style.display = 'block';
+        }
+        function selRet(r, btn) {
+            curRetReason = r;
+            document.querySelectorAll('.reason-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        }
+        async function doRet() {
+            if(!curRetReason) return tg.showAlert("Выберите причину!");
+            await db.from('orders').update({ status: 'RETURNED', return_reason: curRetReason }).eq('order_id', curOrder.order_id);
+            tg.HapticFeedback.notificationOccurred('error');
+            nav('scr-main');
+            tg.showAlert("Возврат оформлен");
         }
 
-        async function processIssue() {
-            const orderId = document.getElementById('issue_id').value.trim();
-            if (!orderId) return tg.showAlert("Введите номер заказа!");
-
-            tg.MainButton.showProgress();
-            try {
-                const order = allOrders.find(o => o.order_id === orderId || o.sku === orderId);
-                if (!order) {
-                    tg.MainButton.hideProgress();
-                    return tg.showAlert("Заказ не найден в вашей базе!");
-                }
-                if (order.status !== 'ARRIVED_AT_PVZ') {
-                    tg.MainButton.hideProgress();
-                    return tg.showAlert(`Нельзя выдать! Текущий статус заказа: ${order.status}`);
-                }
-
-                const { error } = await supabaseClient.from('orders')
-                    .update({ status: 'COMPLETED' })
-                    .eq('order_id', order.order_id);
-                
-                if (error) throw error;
-
-                await fetchOrders(); 
-                tg.HapticFeedback.notificationOccurred('success');
-                tg.showAlert(`✅ Заказ ${order.order_id} выдан клиенту!`);
-                openScreen('screen-main');
-            } catch (err) {
-                tg.showAlert("Ошибка: " + err.message);
-            } finally {
-                tg.MainButton.hideProgress();
-            }
-        }
-
-        async function processReturn() {
-            const orderId = document.getElementById('return_id').value.trim();
-            const reason = document.getElementById('return_reason').value;
-
-            if (!orderId) return tg.showAlert("Введите номер заказа!");
-
-            tg.showConfirm(`Оформить возврат заказа ${orderId}? Причина: "${reason}"`, async function(confirmed) {
-                if (confirmed) {
-                    tg.MainButton.showProgress();
-                    try {
-                        const { error } = await supabaseClient.from('orders')
-                            .update({ status: 'RETURNED', return_reason: reason })
-                            .eq('order_id', orderId);
-                        
-                        if (error) throw error;
-
-                        await fetchOrders(); 
-                        tg.HapticFeedback.notificationOccurred('error'); 
-                        tg.showAlert(`❌ Возврат оформлен.`);
-                        openScreen('screen-main');
-                    } catch (err) {
-                        tg.showAlert("Ошибка: " + err.message);
-                    } finally {
-                        tg.MainButton.hideProgress();
-                    }
-                }
-            });
-        }
-
-        function renderStats(statusFilter) {
+        // СТАТИСТИКА
+        function stat(s, btn) {
             document.querySelectorAll('.stat-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(`tab-${statusFilter}`).classList.add('active');
-
-            const container = document.getElementById('stats-container');
-            container.innerHTML = '';
-
-            const filtered = allOrders.filter(o => o.status === statusFilter);
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:var(--hint-color); margin-top:20px;">Нет данных</p>`;
-                return;
-            }
-
-            filtered.forEach(order => {
-                let extraInfo = '';
-                if (statusFilter === 'ARRIVED_AT_PVZ') extraInfo = `Ячейка: <span class="cell-badge">${order.cell || 'Нет'}</span>`;
-                if (statusFilter === 'RETURNED') extraInfo = `Причина: <b>${order.return_reason || 'Не указана'}</b>`;
-                
-                container.innerHTML += `
-                    <div class="order-card">
-                        <div class="order-card-header">
-                            <span>${order.order_id}</span>
-                            <span style="font-size:12px; font-weight:normal; color:var(--hint-color)">Арт: ${order.sku || '---'}</span>
-                        </div>
-                        <div>Товар: ${order.client_name || 'Неизвестно'} (x${order.qty || 1})</div>
-                        <div class="sub">${extraInfo}</div>
+            btn.classList.add('active');
+            const list = document.getElementById('stat-list');
+            list.innerHTML = '';
+            const filtered = orders.filter(o => o.status === s);
+            if(!filtered.length) list.innerHTML = '<div style="text-align:center; padding:20px; color:#999">Пусто</div>';
+            filtered.forEach(o => {
+                list.innerHTML += `
+                    <div class="order-item">
+                        <div class="order-item-head"><span>${o.order_id}</span> <span style="color:var(--blue)">${o.cell||''}</span></div>
+                        <div class="order-item-sub">${o.client_name} · ${o.sku}</div>
+                        ${o.return_reason ? `<div class="order-item-sub" style="color:var(--red)">${o.return_reason}</div>` : ''}
                     </div>
                 `;
             });
         }
 
-        authenticate();
+        init();
     </script>
 </body>
 </html>

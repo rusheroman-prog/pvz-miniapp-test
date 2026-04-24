@@ -3,9 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>ПВЗ SQL — Visa Kapitalbank</title>
+  <title>ПВЗ Secure SQL — Visa Kapitalbank</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
   <style>
     :root {
@@ -545,13 +544,15 @@
 
 <script>
 // ══════════════════════════════════════════
-// КОНФИГ — SUPABASE SQL RPC
+// КОНФИГ — SECURE EDGE API
 // ══════════════════════════════════════════
 const SUPABASE_URL = "https://ysvogudznyuszssdriih.supabase.co";
-const SUPABASE_KEY = "sb_publishable_kU91fqnkt80hbLcVEms6oA_eXKVzY2A";
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
-});
+const SUPABASE_ANON_KEY = "sb_publishable_kU91fqnkt80hbLcVEms6oA_eXKVzY2A";
+const PVZ_API_URL = `${SUPABASE_URL}/functions/v1/pvz-api`;
+
+// Для локального теста в обычном браузере можно временно поставить true,
+// но в бою должно быть false: нужен Telegram.WebApp.initData.
+const DEV_ALLOW_BROWSER_TEST = false;
 
 // ══════════════════════════════════════════
 // СОСТОЯНИЕ
@@ -561,7 +562,7 @@ tg.expand();
 tg.ready();
 
 const state = {
-  tgId:      String(tg.initDataUnsafe?.user?.id || "TEST_ID"),
+  tgId:      String(tg.initDataUnsafe?.user?.id || ""),
   name:      tg.initDataUnsafe?.user?.first_name || "Оператор",
   pvzCode:   localStorage.getItem("pvz_code") || "",
   role:      localStorage.getItem("pvz_role") || "Оператор",
@@ -1105,12 +1106,15 @@ function esc(str) {
 }
 
 // ══════════════════════════════════════════
-// ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМА (ПЕСОЧНИЦА / БОЙ)
+// SECURE API: Telegram initData → Supabase Edge Function
 // ══════════════════════════════════════════
-const USE_MOCK = false; // true — песочница, false — Supabase SQL RPC
+const USE_MOCK = false;
 
-const MOCK_DB = [];
 const delay = ms => new Promise(res => setTimeout(res, ms));
+
+function getTelegramInitData() {
+  return window.Telegram?.WebApp?.initData || "";
+}
 
 async function api(action, extra = {}) {
   if (USE_MOCK) {
@@ -1119,34 +1123,46 @@ async function api(action, extra = {}) {
   }
 
   try {
-    const tgId = String(state.tgId || "");
-    let fn = "";
-    let args = {};
-
-    switch (action) {
-      case "check_auth": fn = "pvz_check_auth"; args = { p_tg_id: tgId }; break;
-      case "get_pvz_list": fn = "pvz_get_pvz_list"; args = {}; break;
-      case "register": fn = "pvz_register_operator"; args = { p_tg_id: tgId, p_name: extra.name || state.name || "Оператор", p_pvz_code: extra.pvz_code || state.pvzCode || "" }; break;
-      case "get_my_orders": fn = "pvz_get_my_orders"; args = { p_tg_id: tgId }; break;
-      case "check_reception": fn = "pvz_check_reception"; args = { p_tg_id: tgId, p_external_id: extra.order_id || "" }; break;
-      case "save_reception": fn = "pvz_save_reception"; args = { p_tg_id: tgId, p_external_id: extra.order_id || "", p_cell: extra.cell || "" }; break;
-      case "find_issuance": fn = "pvz_find_issuance"; args = { p_tg_id: tgId, p_external_id: extra.order_id || "" }; break;
-      case "save_issuance": fn = "pvz_save_issuance"; args = { p_tg_id: tgId, p_external_id: extra.order_id || "" }; break;
-      case "check_return": fn = "pvz_check_return"; args = { p_tg_id: tgId, p_external_id: extra.order_id || "" }; break;
-      case "save_return": fn = "pvz_save_return"; args = { p_tg_id: tgId, p_external_id: extra.order_id || "", p_reason: extra.reason || "" }; break;
-      case "get_report": fn = "pvz_get_report"; args = { p_tg_id: tgId, p_filter: extra.filter || "all" }; break;
-      default: tg.showAlert("Неизвестное действие: " + action); return {};
-    }
-
-    const { data, error } = await db.rpc(fn, args);
-    if (error) {
-      console.error("RPC error:", fn, error);
-      tg.showAlert("Ошибка сервера: " + (error.message || error));
+    const initData = getTelegramInitData();
+    if (!initData && !DEV_ALLOW_BROWSER_TEST) {
+      tg.showAlert("Mini App открыт не из Telegram или отсутствует initData. Откройте приложение через Telegram-бота.");
       return {};
     }
-    return data || {};
+
+    const resp = await fetch(PVZ_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "apikey": SUPABASE_ANON_KEY,
+        "x-telegram-init-data": initData
+      },
+      body: JSON.stringify({
+        action,
+        payload: extra || {},
+        // Дублируем в body для окружений/прокси, которые режут custom headers.
+        initData
+      })
+    });
+
+    const text = await resp.text();
+    let json;
+    try { json = text ? JSON.parse(text) : {}; }
+    catch(e) {
+      console.error("Bad JSON from Edge Function", text);
+      tg.showAlert("Ошибка ответа сервера. Проверьте Edge Function pvz-api.");
+      return {};
+    }
+
+    if (!resp.ok || !json.ok) {
+      console.error("PVZ API error", action, json);
+      tg.showAlert("Ошибка сервера: " + (json.error || resp.statusText));
+      return {};
+    }
+
+    return json.data || {};
   } catch(e) {
-    console.error("API error:", action, e);
+    console.error("PVZ API fetch error:", action, e);
     tg.showAlert("Сбой сети или API: " + e.message);
     return {};
   }

@@ -1179,7 +1179,7 @@ function showResult(id, type, title, body) {
 // ══════════════════════════════════════════
 
 // Проверка конфига до запуска
-if (!SUPABASE_URL || !SUPABASE_KEY || SUPABASE_URL.includes("ВСТАВЬТЕ")) {
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_URL.includes("ВСТАВЬТЕ")) {
   document.body.innerHTML = `
     <div style="padding:32px;font-family:sans-serif;color:#c00;text-align:center">
       <div style="font-size:48px;margin-bottom:16px">⚙️</div>

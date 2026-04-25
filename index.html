@@ -1,1192 +1,164 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>ПВЗ Secure SQL — Visa Kapitalbank</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Uzum WMS — Волновой отбор</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root {
-      --tg-bg:       var(--tg-theme-bg-color, #ffffff);
-      --tg-text:     var(--tg-theme-text-color, #000000);
-      --tg-hint:     var(--tg-theme-hint-color, #999999);
-      --tg-link:     var(--tg-theme-link-color, #2481cc);
-      --tg-btn:      var(--tg-theme-button-color, #2481cc);
-      --tg-btn-text: var(--tg-theme-button-text-color, #ffffff);
-      --tg-second:   var(--tg-theme-secondary-bg-color, #f1f1f1);
-      --radius: 12px;
-      --green:  #34c759;
-      --red:    #ff3b30;
-      --orange: #ff9500;
-      --blue:   #007aff;
+    :root{
+      --bg:var(--tg-theme-bg-color,#f5f6fb);--card:var(--tg-theme-secondary-bg-color,#fff);--text:var(--tg-theme-text-color,#111827);--hint:var(--tg-theme-hint-color,#64748b);
+      --btn:var(--tg-theme-button-color,#7000ff);--btnText:var(--tg-theme-button-text-color,#fff);--line:rgba(15,23,42,.10);--green:#16a34a;--red:#dc2626;--orange:#f59e0b;--blue:#2563eb;--dark:#111827;
+      --safeTop:env(safe-area-inset-top);--safeBottom:env(safe-area-inset-bottom);--radius:18px;
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--tg-bg);
-      color: var(--tg-text);
-      font-size: 16px;
-      min-height: 100vh;
-    }
-
-    /* ── Экраны ─────────────────────────────────────────────── */
-    .screen { display: none; flex-direction: column; min-height: 100vh; }
-    .screen.active { display: flex; }
-
-    /* ── Шапка ──────────────────────────────────────────────── */
-    .header {
-      background: var(--tg-btn);
-      color: var(--tg-btn-text);
-      padding: 14px 16px 12px;
-      position: sticky; top: 0; z-index: 10;
-    }
-    .header h1 { font-size: 17px; font-weight: 600; }
-    .header .sub { font-size: 13px; opacity: 0.8; margin-top: 2px; }
-    .back-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-    .back-btn {
-      background: rgba(255,255,255,0.2); border: none;
-      color: white; border-radius: 8px; padding: 4px 10px;
-      font-size: 13px; cursor: pointer;
-    }
-
-    /* ── Контент ────────────────────────────────────────────── */
-    .content-old-replaced { flex: 1; padding: 16px; overflow-y: auto; }
-
-    /* ── Карточки меню ──────────────────────────────────────── */
-    .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
-    .menu-card {
-      background: var(--tg-second);
-      border-radius: var(--radius);
-      padding: 20px 14px;
-      text-align: center;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: border-color 0.15s;
-      user-select: none;
-    }
-    .menu-card:active { opacity: 0.7; }
-    .menu-card.accent { border-color: var(--tg-btn); }
-    .menu-card .icon  { font-size: 32px; margin-bottom: 8px; }
-    .menu-card .label { font-size: 14px; font-weight: 600; color: var(--tg-text); }
-    .menu-card .count { font-size: 12px; color: var(--tg-hint); margin-top: 4px; }
-
-    /* ── Форма ──────────────────────────────────────────────── */
-    .form-section { background: var(--tg-second); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
-    .form-section h3 { font-size: 14px; font-weight: 600; color: var(--tg-hint); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
-
-    .field-label { font-size: 13px; color: var(--tg-hint); margin-bottom: 4px; }
-    .field-input {
-      width: 100%; background: var(--tg-bg);
-      border: 1.5px solid rgba(0,0,0,0.1);
-      border-radius: 10px; padding: 12px 14px;
-      font-size: 17px; color: var(--tg-text);
-      outline: none; transition: border-color 0.15s;
-    }
-    .field-input:focus { border-color: var(--tg-btn); }
-    .field-input.error { border-color: var(--red); }
-    .field-input.success { border-color: var(--green); }
-
-    /* ── Кнопки ─────────────────────────────────────────────── */
-    .btn {
-      width: 100%; padding: 14px;
-      background: var(--tg-btn); color: var(--tg-btn-text);
-      border: none; border-radius: var(--radius);
-      font-size: 16px; font-weight: 600;
-      cursor: pointer; margin-top: 8px;
-    }
-    .btn:active { opacity: 0.8; }
-    .btn.secondary { background: var(--tg-second); color: var(--tg-text); }
-    .btn.danger    { background: var(--red); color: white; }
-    .btn.success   { background: var(--green); color: white; }
-    .btn:disabled  { opacity: 0.4; cursor: default; }
-
-    /* ── Статус-карточка ────────────────────────────────────── */
-    .result-card {
-      border-radius: var(--radius); padding: 16px;
-      margin: 12px 0; display: none;
-    }
-    .result-card.visible { display: block; }
-    .result-card.ok   { background: #e8f5e9; border: 1.5px solid var(--green); }
-    .result-card.err  { background: #fce8e8; border: 1.5px solid var(--red); }
-    .result-card.info { background: #e3f2fd; border: 1.5px solid var(--blue); }
-    .result-card .rc-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
-    .result-card .rc-body  { font-size: 14px; color: #555; }
-
-    /* ── Скан-секция ────────────────────────────────────────── */
-    .scan-wrap {
-      position: relative;
-      border-radius: var(--radius);
-      overflow: hidden;
-      background: #000;
-      margin-bottom: 12px;
-      /* Высота = 56% ширины экрана — оптимально для портретного режима */
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      max-height: 56vw;
-    }
-    .scan-wrap video {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-    .scan-overlay {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      pointer-events: none;
-    }
-    .scan-frame {
-      width: min(55vw, 180px);
-      height: min(55vw, 180px);
-      border: 3px solid rgba(255,255,255,0.9);
-      border-radius: 14px;
-      box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
-      position: relative;
-      overflow: hidden;
-    }
-    /* Лазерная полоска — показывает что камера активна и сканирует */
-    .scan-frame::after {
-      content: "";
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 2px;
-      background: var(--green);
-      box-shadow: 0 0 8px var(--green);
-      animation: scanLaser 2s infinite linear alternate;
-    }
-    @keyframes scanLaser {
-      0%   { transform: translateY(0); }
-      100% { transform: translateY(min(55vw, 180px)); }
-    }
-    .scan-hint {
-      text-align: center; font-size: 13px;
-      color: var(--tg-hint); margin-bottom: 8px;
-    }
-
-    /* ── Адаптивные отступы контента ───────────────────────── */
-    .content {
-      flex: 1; overflow-y: auto;
-      padding: clamp(10px, 3vw, 20px);
-      /* Запрещаем контенту вылезать за экран */
-      max-width: 100%;
-      overflow-x: hidden;
-    }
-
-    /* ── Кнопки — минимальная высота для пальца ─────────────── */
-    .btn { min-height: 48px; }
-    .field-input { min-height: 48px; }
-
-    /* ── Форма — не выходит за экран ───────────────────────── */
-    .form-section {
-      background: var(--tg-second);
-      border-radius: var(--radius);
-      padding: clamp(12px, 3vw, 20px);
-      margin-bottom: 12px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    /* ── Строка ввода + кнопка камеры — не обрезается ──────── */
-    .input-camera-row {
-      display: flex;
-      gap: 8px;
-      align-items: stretch;
-      width: 100%;
-    }
-    .input-camera-row .field-input { flex: 1; min-width: 0; }
-    .input-camera-row .cam-btn {
-      flex-shrink: 0;
-      width: 48px; height: 48px;
-      background: var(--tg-btn); color: white;
-      border: none; border-radius: 10px;
-      font-size: 20px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .input-camera-row .cam-btn:active { opacity: 0.8; }
-
-    /* ── Список заказов ─────────────────────────────────────── */
-    /* ── Заказы ─────────────────────────────────────────────── */
-    .search-row { padding: 0 4px 12px; }
-
-    .cell-badge {
-      display: inline-block;
-      background: rgba(0,122,255,0.1);
-      color: var(--blue);
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 700;
-      margin-top: 4px;
-      border: 1px solid rgba(0,122,255,0.2);
-    }
-
-    .order-item {
-      background: var(--tg-second);
-      border-radius: var(--radius); padding: 12px 14px;
-      margin-bottom: 8px; cursor: pointer;
-      display: flex; flex-direction: column; align-items: stretch;
-      transition: all 0.2s;
-    }
-    .order-item:active { opacity: 0.7; }
-    .order-item-header { display: flex; align-items: center; gap: 12px; width: 100%; }
-    .order-status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .order-info { flex: 1; }
-    .order-id   { font-weight: 600; font-size: 15px; }
-    .order-meta { font-size: 13px; color: var(--tg-hint); margin-top: 2px; }
-
-    .order-actions {
-      display: none;
-      gap: 8px;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px dashed rgba(0,0,0,0.1);
-    }
-    .order-item.expanded .order-actions { display: flex; }
-
-    .action-btn {
-      flex: 1; padding: 10px; border-radius: 8px; border: none;
-      font-size: 13px; font-weight: 600; cursor: pointer; text-align: center;
-    }
-    .action-btn.issue  { background: var(--green); color: white; }
-    .action-btn.return { background: #ffebee; color: var(--red); }
-
-    /* ── Отчёт ──────────────────────────────────────────────── */
-    .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
-    .stat-card { background: var(--tg-second); border-radius: 10px; padding: 14px; text-align: center; }
-    .stat-num  { font-size: 28px; font-weight: 700; }
-    .stat-lbl  { font-size: 12px; color: var(--tg-hint); margin-top: 2px; }
-    .filter-row { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
-    .filter-btn {
-      white-space: nowrap; padding: 6px 14px;
-      border-radius: 20px; border: 1.5px solid var(--tg-btn);
-      background: transparent; color: var(--tg-btn);
-      font-size: 13px; cursor: pointer;
-    }
-    .filter-btn.active { background: var(--tg-btn); color: white; }
-
-    .report-row {
-      background: var(--tg-second); border-radius: 10px;
-      padding: 10px 12px; margin-bottom: 6px;
-      font-size: 13px;
-    }
-    .report-row .rr-order { font-weight: 600; font-size: 14px; }
-    .report-row .rr-meta  { color: var(--tg-hint); margin-top: 2px; }
-    .status-badge {
-      display: inline-block; padding: 2px 8px; border-radius: 10px;
-      font-size: 11px; font-weight: 600; margin-left: 6px;
-    }
-    .badge-received { background: #fff3cd; color: #856404; }
-    .badge-issued   { background: #d4edda; color: #155724; }
-    .badge-returned { background: #f8d7da; color: #721c24; }
-    .badge-waiting  { background: #e2e3e5; color: #383d41; }
-
-    /* ── Выбор ПВЗ (онбординг) ─────────────────────────────── */
-    .pvz-list { max-height: 60vh; overflow-y: auto; }
-    .pvz-item {
-      padding: 14px 16px; border-bottom: 1px solid rgba(0,0,0,0.06);
-      cursor: pointer; font-size: 16px;
-    }
-    .pvz-item:active { background: var(--tg-second); }
-
-    /* ── Лоадер ─────────────────────────────────────────────── */
-    .loader { text-align: center; padding: 40px; color: var(--tg-hint); }
-    .spinner {
-      width: 32px; height: 32px; margin: 0 auto 12px;
-      border: 3px solid var(--tg-second);
-      border-top-color: var(--tg-btn);
-      border-radius: 50%; animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── Разворот причины ───────────────────────────────────── */
-    .reason-list { display: flex; flex-direction: column; gap: 8px; }
-    .reason-btn {
-      padding: 12px 14px; background: var(--tg-second);
-      border: 2px solid transparent; border-radius: 10px;
-      text-align: left; font-size: 15px; cursor: pointer;
-    }
-    .reason-btn.selected { border-color: var(--tg-btn); background: rgba(0,120,255,0.06); }
-    .reason-btn:active { opacity: 0.7; }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:calc(18px + var(--safeBottom))}
+    .top{position:sticky;top:0;z-index:10;background:linear-gradient(135deg,#111827,#35125f);color:#fff;padding:calc(14px + var(--safeTop)) 14px 14px;border-bottom-left-radius:22px;border-bottom-right-radius:22px;box-shadow:0 12px 28px rgba(15,23,42,.20)}
+    .topRow{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.title{font-size:18px;font-weight:950}.sub{font-size:12px;color:#d1d5db;margin-top:3px;line-height:1.35}.pill{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:6px 9px;font-size:11px;font-weight:900;white-space:nowrap}.wrap{padding:14px}.screen{display:none}.screen.active{display:block}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px;box-shadow:0 6px 18px rgba(15,23,42,.04)}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:10px}.muted{color:var(--hint);font-size:13px;line-height:1.35}.label{display:block;color:var(--hint);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.35px;margin:12px 0 6px}
+    input,select{width:100%;border:2px solid var(--line);background:var(--card);color:var(--text);border-radius:14px;padding:13px;font-size:17px;outline:none}input:focus,select:focus{border-color:var(--btn)}
+    .btn{border:0;border-radius:14px;background:var(--btn);color:var(--btnText);font-weight:900;font-size:15px;min-height:46px;padding:12px 14px;cursor:pointer}.btn:disabled{opacity:.5;cursor:default}.btn.secondary{background:var(--card);color:var(--text);border:1.5px solid var(--line)}.btn.green{background:var(--green);color:#fff}.btn.red{background:var(--red);color:#fff}.btn.full{width:100%}.btn.small{min-height:34px;padding:7px 10px;border-radius:10px;font-size:12px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.setup{max-width:520px;margin:8vh auto 0}
+    .hero{background:linear-gradient(135deg,var(--btn),#3b0764);color:#fff;border-radius:22px;padding:16px;margin-bottom:12px}.heroTop{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}.cellBig{font-size:44px;font-weight:950;line-height:.98;letter-spacing:-1px}.skuBig{font-size:20px;font-weight:950;margin-top:8px;word-break:break-all}.heroMeta{font-size:13px;color:rgba(255,255,255,.82);margin-top:6px}.qtyBox{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:10px;text-align:center;min-width:92px}.qtyBox .n{font-size:34px;font-weight:950}.qtyBox .t{font-size:11px;color:rgba(255,255,255,.75);font-weight:900;text-transform:uppercase}.progress{height:10px;background:rgba(255,255,255,.22);border-radius:999px;overflow:hidden;margin-top:13px}.fill{height:100%;width:0%;background:#22c55e;border-radius:999px;transition:.18s ease}.scan{background:#0f172a;color:#fff;border-radius:20px;padding:14px;margin-bottom:12px}.scan label{display:block;font-size:12px;font-weight:950;color:#cbd5e1;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}.scanRow{display:flex;gap:8px}.scanRow input{background:#fff;color:#111;text-align:center;font-size:22px;font-weight:950}.scanMsg{min-height:22px;margin-top:9px;font-size:13px;font-weight:850}.ok{color:#22c55e}.err{color:#ef4444}.info{color:#60a5fa}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.stat{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:11px;text-align:center}.stat .v{font-size:22px;font-weight:950}.stat .l{font-size:11px;color:var(--hint);font-weight:850;margin-top:2px}.task{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:12px;margin-bottom:9px}.task.current{border-color:var(--btn);background:#f1e9ff}.task.done{background:#ecfdf5;border-color:#86efac}.taskTop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.taskCell{font-size:18px;font-weight:950;color:var(--btn)}.taskSku{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:rgba(148,163,184,.18);border-radius:8px;padding:4px 7px;display:inline-block;margin-top:5px}.taskName{font-size:13px;font-weight:800;margin-top:6px;line-height:1.25}.taskQty{font-size:24px;font-weight:950;white-space:nowrap}.badge{font-size:11px;font-weight:900;border-radius:999px;padding:4px 8px;background:#eff6ff;color:#1d4ed8}.badge.green{background:#dcfce7;color:#166534}.badge.red{background:#fee2e2;color:#991b1b}.tabs{display:flex;gap:8px;margin-bottom:10px}.tab{flex:1;background:var(--card);border:1.5px solid var(--line);color:var(--text);border-radius:12px;min-height:38px;font-weight:900}.tab.active{background:var(--btn);color:#fff;border-color:var(--btn)}.empty{text-align:center;color:var(--hint);padding:28px 12px}.toast{position:fixed;left:12px;right:12px;bottom:calc(14px + var(--safeBottom));z-index:50;display:flex;flex-direction:column;gap:8px}.toast div{background:#111827;color:#fff;border-radius:14px;padding:12px 14px;font-weight:850;box-shadow:0 12px 30px rgba(0,0,0,.22)}
+    .order{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px;margin-bottom:8px}.orderId{font-weight:950}.orderMeta{font-size:12px;color:var(--hint);margin-top:3px}.routeList{max-height:44vh;overflow:auto;padding-bottom:8px}
   </style>
 </head>
 <body>
-
-<!-- ═══════════════ ОНБОРДИНГ ═══════════════ -->
-<div id="screen-onboard" class="screen active">
-  <div class="header"><h1>📦 ПВЗ — Первый вход</h1></div>
-  <div class="content">
-    <div class="form-section">
-      <h3>Добро пожаловать</h3>
-      <p style="font-size:14px;color:var(--tg-hint);margin-bottom:16px">
-        Выберите ваш пункт выдачи. Выбор сохранится автоматически.
-      </p>
-      <div class="field-label">Поиск ПВЗ</div>
-      <input type="text" class="field-input" id="pvzSearch" placeholder="Например: ТАШ-123"
-             oninput="filterPvzList(this.value)" style="margin-bottom:12px">
-    </div>
-    <div class="pvz-list" id="pvzList">
-      <div class="loader"><div class="spinner"></div>Загрузка...</div>
+  <div class="top">
+    <div class="topRow">
+      <div><div class="title">🧭 Волновой отбор</div><div class="sub" id="who">Одна волна · маршрут по ячейкам</div></div>
+      <div class="pill" id="stationPill">—</div>
     </div>
   </div>
-</div>
 
-<!-- ═══════════════ ГЛАВНОЕ МЕНЮ ═══════════════ -->
-<div id="screen-main" class="screen">
-  <div class="header">
-    <h1 id="mainTitle">ПВЗ</h1>
-    <div class="sub" id="mainSub"></div>
-  </div>
-  <div class="content">
-    <div class="menu-grid">
-      <div class="menu-card accent" onclick="goTo('reception')">
-        <div class="icon">📥</div>
-        <div class="label">Приёмка</div>
-        <div class="count" id="cntWaiting">—</div>
-      </div>
-      <div class="menu-card" onclick="goTo('issuance')">
-        <div class="icon">📤</div>
-        <div class="label">Выдача</div>
-        <div class="count" id="cntReady">—</div>
-      </div>
-      <div class="menu-card" onclick="goTo('return')">
-        <div class="icon">↩️</div>
-        <div class="label">Возврат</div>
-        <div class="count"></div>
-      </div>
-      <div class="menu-card" onclick="goTo('orders')">
-        <div class="icon">📋</div>
-        <div class="label">Заказы</div>
-        <div class="count" id="cntOrders">—</div>
-      </div>
-    </div>
-    <div id="reportMenuCard" style="display:none;margin-top:12px">
-      <div class="menu-card" onclick="goTo('report')" style="grid-column:1/-1">
-        <div class="icon">📊</div>
-        <div class="label">Отчёт ТУ/РУ</div>
-      </div>
-    </div>
-    <div style="margin-top:20px;text-align:center">
-      <button class="btn secondary" style="width:auto;padding:8px 20px;font-size:13px"
-              onclick="changePvz()">Сменить ПВЗ</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════ ПРИЁМКА ═══════════════ -->
-<div id="screen-reception" class="screen">
-  <div class="header">
-    <div class="back-row">
-      <button class="back-btn" onclick="goTo('main')">← Назад</button>
-    </div>
-    <h1>📥 Приёмка</h1>
-  </div>
-  <div class="content">
-    <div class="form-section">
-      <h3>Шаг 1 — Номер заказа</h3>
-      <div class="scan-hint">Наведите камеру на QR-код этикетки или введите вручную</div>
-      <div class="scan-wrap" id="recScanWrap" style="display:none">
-        <video id="recVideo" playsinline></video>
-        <div class="scan-overlay"><div class="scan-frame"></div></div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <input type="text" class="field-input" id="recOrderInput" placeholder="Номер заказа" inputmode="numeric"
-               onkeypress="if(event.key==='Enter')checkReception()">
-        <button class="btn" style="width:auto;margin:0;padding:0 16px"
-                onclick="toggleCamera('rec')">📷</button>
-      </div>
-      <button class="btn" onclick="checkReception()" style="margin-top:8px">Проверить</button>
-    </div>
-
-    <div class="result-card" id="recResult"></div>
-
-    <div id="recCellSection" style="display:none">
-      <div class="form-section">
-        <h3>Шаг 2 — Ячейка хранения</h3>
-        <div class="field-label">Куда положить товар?</div>
-        <input type="text" class="field-input" id="recCellInput" placeholder="Например: А-12"
-               onkeypress="if(event.key==='Enter')saveReception()">
-        <button class="btn success" onclick="saveReception()" style="margin-top:8px">
-          ✅ Принять и сохранить
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════ ВЫДАЧА ═══════════════ -->
-<div id="screen-issuance" class="screen">
-  <div class="header">
-    <div class="back-row"><button class="back-btn" onclick="goTo('main')">← Назад</button></div>
-    <h1>📤 Выдача</h1>
-  </div>
-  <div class="content">
-    <div class="form-section">
-      <h3>Номер заказа клиента</h3>
-      <div class="scan-wrap" id="issScanWrap" style="display:none">
-        <video id="issVideo" playsinline></video>
-        <div class="scan-overlay"><div class="scan-frame"></div></div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <input type="text" class="field-input" id="issOrderInput" placeholder="Номер заказа" inputmode="numeric"
-               onkeypress="if(event.key==='Enter')findIssuance()">
-        <button class="btn" style="width:auto;margin:0;padding:0 16px"
-                onclick="toggleCamera('iss')">📷</button>
-      </div>
-      <button class="btn" onclick="findIssuance()" style="margin-top:8px">Найти заказ</button>
-    </div>
-
-    <div class="result-card" id="issResult"></div>
-
-    <div id="issConfirmSection" style="display:none">
-      <div class="form-section">
-        <h3>Подтверждение выдачи</h3>
-        <div style="font-size:22px;font-weight:700;color:var(--blue);text-align:center;padding:12px 0"
-             id="issCellDisplay"></div>
-        <p style="text-align:center;font-size:14px;color:var(--tg-hint);margin-bottom:8px">
-          Возьмите товар с этой ячейки и выдайте клиенту
-        </p>
-        <button class="btn success" onclick="saveIssuance()">✅ Подтвердить выдачу</button>
-        <button class="btn secondary" onclick="resetIssuance()" style="margin-top:8px">Отмена</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════ ВОЗВРАТ ═══════════════ -->
-<div id="screen-return" class="screen">
-  <div class="header">
-    <div class="back-row"><button class="back-btn" onclick="goTo('main')">← Назад</button></div>
-    <h1>↩️ Возврат</h1>
-  </div>
-  <div class="content">
-    <div class="form-section">
-      <h3>Номер заказа</h3>
-      <div class="scan-wrap" id="retScanWrap" style="display:none">
-        <video id="retVideo" playsinline></video>
-        <div class="scan-overlay"><div class="scan-frame"></div></div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <input type="text" class="field-input" id="retOrderInput" placeholder="Номер заказа" inputmode="numeric"
-               onkeypress="if(event.key==='Enter')checkReturn()">
-        <button class="btn" style="width:auto;margin:0;padding:0 16px"
-                onclick="toggleCamera('ret')">📷</button>
-      </div>
-      <button class="btn" onclick="checkReturn()" style="margin-top:8px">Проверить</button>
-    </div>
-
-    <div class="result-card" id="retResult"></div>
-
-    <div id="retReasonSection" style="display:none">
-      <div class="form-section">
-        <h3>Причина возврата</h3>
-        <div class="reason-list">
-          <button class="reason-btn" onclick="selectReason(this,'Клиент не явился')">Клиент не явился</button>
-          <button class="reason-btn" onclick="selectReason(this,'Клиент отказался')">Клиент отказался</button>
-          <button class="reason-btn" onclick="selectReason(this,'Повреждён товар')">Повреждён товар</button>
-          <button class="reason-btn" onclick="selectReason(this,'Ошибка адреса')">Ошибка адреса</button>
+  <div class="wrap">
+    <section id="setup" class="screen setup active">
+      <div class="card">
+        <h2 style="font-size:22px;margin-bottom:6px">Настройка волны</h2>
+        <p class="muted">После входа приложение автоматически выдаст маршрут обхода по ячейкам для отбора товаров сразу по нескольким заказам.</p>
+        <label class="label">Оператор</label><input id="operatorInput" placeholder="Имя / Telegram ID">
+        <div class="grid2">
+          <div><label class="label">Станция</label><input id="stationInput" value="PICK-01"></div>
+          <div><label class="label">Заказов в волне</label><input id="waveSizeInput" type="number" min="1" max="100" value="50"></div>
         </div>
-        <input type="text" class="field-input" id="retCustomReason"
-               placeholder="Другая причина..." style="margin-top:8px"
-               oninput="clearSelectedReasons()">
-        <button class="btn danger" onclick="saveReturn()" style="margin-top:12px">
-          ↩️ Оформить возврат
-        </button>
+        <div class="grid2">
+          <div><label class="label">Маршрут, опц.</label><input id="routeInput" inputmode="numeric" placeholder="Напр. 12"></div>
+          <div><label class="label">ПВЗ, опц.</label><input id="pvzInput" placeholder="Код ПВЗ"></div>
+        </div>
+        <button class="btn full" id="startBtn" style="margin-top:14px">Открыть задание</button>
       </div>
-    </div>
-  </div>
-</div>
+    </section>
 
-<!-- ═══════════════ ЗАКАЗЫ ═══════════════ -->
-<div id="screen-orders" class="screen">
-  <div class="header">
-    <div class="back-row"><button class="back-btn" onclick="goTo('main')">← Назад</button></div>
-    <h1>📋 Мои заказы</h1>
+    <section id="waveScreen" class="screen">
+      <div id="waveContent"><div class="card empty">Загрузка волны...</div></div>
+    </section>
   </div>
-  <div class="content">
-    <div class="search-row">
-      <input type="text" class="field-input" id="orderSearchInput"
-             placeholder="Поиск по номеру заказа или телефону..."
-             oninput="applyOrderFilters()" inputmode="search">
-    </div>
-    <div class="filter-row">
-      <button class="filter-btn active" onclick="setOrderTab('all', this)">Все</button>
-      <button class="filter-btn" onclick="setOrderTab('waiting', this)">Ожидают</button>
-      <button class="filter-btn" onclick="setOrderTab('stored', this)">На хранении</button>
-      <button class="filter-btn" onclick="setOrderTab('issued', this)">Выданы</button>
-    </div>
-    <div id="ordersList"><div class="loader"><div class="spinner"></div>Загрузка...</div></div>
-  </div>
-</div>
-
-<!-- ═══════════════ ОТЧЁТ ТУ/РУ ═══════════════ -->
-<div id="screen-report" class="screen">
-  <div class="header">
-    <div class="back-row"><button class="back-btn" onclick="goTo('main')">← Назад</button></div>
-    <h1>📊 Отчёт ТУ/РУ</h1>
-  </div>
-  <div class="content">
-    <div class="stat-grid" id="reportStats"></div>
-    <div class="filter-row">
-      <button class="filter-btn active" onclick="filterReport('all',this)">Все</button>
-      <button class="filter-btn" onclick="filterReport('waiting',this)">Ожидают</button>
-      <button class="filter-btn" onclick="filterReport('received',this)">Приняты</button>
-      <button class="filter-btn" onclick="filterReport('issued',this)">Выданы</button>
-      <button class="filter-btn" onclick="filterReport('returned',this)">Возврат</button>
-    </div>
-    <div id="reportList"><div class="loader"><div class="spinner"></div>Загрузка...</div></div>
-  </div>
-</div>
+  <div class="toast" id="toast"></div>
 
 <script>
-// ══════════════════════════════════════════
-// КОНФИГ — SECURE EDGE API
-// ══════════════════════════════════════════
-const SUPABASE_URL = "https://ysvogudznyuszssdriih.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_kU91fqnkt80hbLcVEms6oA_eXKVzY2A";
-const PVZ_API_URL = `${SUPABASE_URL}/functions/v1/pvz-api`;
-
-// Для локального теста в обычном браузере можно временно поставить true,
-// но в бою должно быть false: нужен Telegram.WebApp.initData.
-const DEV_ALLOW_BROWSER_TEST = false;
-
-// ══════════════════════════════════════════
-// СОСТОЯНИЕ
-// ══════════════════════════════════════════
-const tg = window.Telegram.WebApp;
-tg.expand();
-tg.ready();
-
-const state = {
-  tgId:      String(tg.initDataUnsafe?.user?.id || ""),
-  name:      tg.initDataUnsafe?.user?.first_name || "Оператор",
-  pvzCode:   localStorage.getItem("pvz_code") || "",
-  role:      localStorage.getItem("pvz_role") || "Оператор",
-  allPvz:    [],
-  allOrders: [],
-  recRow:    null,
-  issRow:    null,
-  retRow:    null,
-  selectedReason: "",
-  cameras:   { rec: null, iss: null, ret: null },
-  // [FIX-3] RAF IDs для явной отмены анимации при остановке камеры
-  rafIds:    { rec: null, iss: null, ret: null },
+'use strict';
+const CONFIG={
+  S_URL:'https://ysvogudznyuszssdriih.supabase.co',
+  S_KEY:'sb_publishable_kU91fqnkt80hbLcVEms6oA_eXKVzY2A'
 };
-
-// ══════════════════════════════════════════
-// ИНИЦИАЛИЗАЦИЯ
-// ══════════════════════════════════════════
-async function init() {
-  // Проверяем авторизацию
-  const auth = await api("check_auth");
-  if (auth.registered) {
-    state.pvzCode = auth.operator.pvzCode;
-    state.role    = auth.operator.role;
-    localStorage.setItem("pvz_code", state.pvzCode);
-    localStorage.setItem("pvz_role",  state.role);
-    showMain();
-  } else if (state.pvzCode) {
-    // Уже выбирал ПВЗ ранее
-    await registerAndGo(state.pvzCode);
-  } else {
-    showOnboard();
-  }
+const tg=window.Telegram?.WebApp; try{tg?.ready();tg?.expand();tg?.disableVerticalSwipes?.();}catch{}
+const db=supabase.createClient(CONFIG.S_URL,CONFIG.S_KEY);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pct=(a,b)=>b?Math.min(100,Math.round(Number(a||0)/Number(b||0)*100)):0;
+let state={operatorId:'',stationId:'',wave:null,progress:null,currentTask:null,tasks:[],orders:[],busy:false,tab:'route'};
+function toast(msg){const d=document.createElement('div');d.textContent=msg;$('toast').appendChild(d);setTimeout(()=>d.remove(),3000)}
+function h(type){try{tg?.HapticFeedback?.notificationOccurred?.(type)}catch{}}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active')}
+function setBusy(v){state.busy=v;document.querySelectorAll('button').forEach(b=>b.disabled=v)}
+async function rpc(name,args){const {data,error}=await db.rpc(name,args||{});if(error)throw error;if(data?.ok===false)throw new Error(data.error||data.message||'Ошибка');return data}
+function getOperatorFromTg(){const u=tg?.initDataUnsafe?.user;return u?`tg:${u.id}:${u.first_name||''}`:''}
+function init(){
+  $('operatorInput').value=localStorage.getItem('wave_operator')||getOperatorFromTg();
+  $('stationInput').value=localStorage.getItem('wave_station')||'PICK-01';
+  $('waveSizeInput').value=localStorage.getItem('wave_size')||'50';
+  $('routeInput').value=localStorage.getItem('wave_route')||'';
+  $('pvzInput').value=localStorage.getItem('wave_pvz')||'';
+  if($('operatorInput').value && $('stationInput').value){start();}
 }
-
-async function showOnboard() {
-  goTo("onboard");
-  const pvzList = await api("get_pvz_list");
-  state.allPvz  = pvzList || [];
-  renderPvzList(state.allPvz);
+function saveSetup(){
+  state.operatorId=$('operatorInput').value.trim()||'operator';
+  state.stationId=$('stationInput').value.trim()||'PICK-01';
+  localStorage.setItem('wave_operator',state.operatorId);localStorage.setItem('wave_station',state.stationId);
+  localStorage.setItem('wave_size',$('waveSizeInput').value||'50');localStorage.setItem('wave_route',$('routeInput').value.trim());localStorage.setItem('wave_pvz',$('pvzInput').value.trim());
+  $('who').textContent=state.operatorId;$('stationPill').textContent=state.stationId;
 }
-
-// [FIX-5] Debounce: не перерисовываем список на каждое нажатие клавиши
-let pvzDebounceTimer = null;
-function filterPvzList(q) {
-  clearTimeout(pvzDebounceTimer);
-  pvzDebounceTimer = setTimeout(() => {
-    const filtered = state.allPvz.filter(p => p.toLowerCase().includes(q.toLowerCase()));
-    renderPvzList(filtered);
-  }, 250);
-}
-
-function renderPvzList(list) {
-  const el = document.getElementById("pvzList");
-  if (!list.length) { el.innerHTML = '<div class="loader">Не найдено</div>'; return; }
-  // [FIX-4] Экранируем значения ПВЗ
-  el.innerHTML = list.map(pvz =>
-    `<div class="pvz-item" onclick="registerAndGo('${esc(pvz)}')">${esc(pvz)}</div>`
-  ).join('');
-}
-
-async function registerAndGo(pvzCode) {
-  state.pvzCode = pvzCode;
-  const res = await api("register", { name: state.name, pvz_code: pvzCode });
-  if (res.role) state.role = res.role;
-  localStorage.setItem("pvz_code", pvzCode);
-  localStorage.setItem("pvz_role",  state.role);
-  showMain();
-}
-
-function changePvz() {
-  localStorage.removeItem("pvz_code");
-  showOnboard();
-}
-
-async function showMain() {
-  goTo("main");
-  document.getElementById("mainTitle").textContent = state.pvzCode || "ПВЗ";
-  document.getElementById("mainSub").textContent   = state.name + " · " + state.role;
-
-  // Показать кнопку отчёта ТУ/РУ
-  if (["ТУ","РУ","Администратор"].includes(state.role)) {
-    document.getElementById("reportMenuCard").style.display = "block";
-  }
-
-  // Загрузить счётчики
-  loadCounts();
-}
-
-async function loadCounts() {
-  const res = await api("get_my_orders");
-  if (!res.orders) return;
-  state.allOrders = res.orders;
-
-  const waiting = res.orders.filter(o => o.status === "Ожидает приёмки").length;
-  const stored  = res.orders.filter(o => o.status === "На хранении").length;
-
-  document.getElementById("cntWaiting").textContent = waiting + " ожид.";
-  document.getElementById("cntReady").textContent   = stored  + " готов.";
-  document.getElementById("cntOrders").textContent  = res.orders.length + " всего";
-}
-
-// ══════════════════════════════════════════
-// НАВИГАЦИЯ
-// ══════════════════════════════════════════
-function goTo(name) {
-  // Лёгкая вибрация при навигации — интерфейс ощущается живым
-  if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
-
-  stopAllCameras();
-  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-  document.getElementById("screen-" + name).classList.add("active");
-
-  if (name === "orders") loadOrders();
-  if (name === "report") loadReport("all");
-
-  // Автофокус для аппаратных сканеров (Bluetooth/USB) — эмулируют клавиатуру
-  // Небольшая задержка нужна чтобы экран успел отрисоваться
-  setTimeout(() => {
-    if (name === "reception") document.getElementById("recOrderInput")?.focus();
-    if (name === "issuance")  document.getElementById("issOrderInput")?.focus();
-    if (name === "return")    document.getElementById("retOrderInput")?.focus();
-  }, 100);
-}
-
-// ══════════════════════════════════════════
-// КАМЕРА (jsQR)
-// ══════════════════════════════════════════
-function toggleCamera(prefix) {
-  const wrap  = document.getElementById(prefix + "ScanWrap");
-  const video = document.getElementById(prefix + "Video");
-  const input = document.getElementById(prefix + "OrderInput");
-
-  if (state.cameras[prefix]) {
-    stopCamera(prefix);
-    return;
-  }
-
-  wrap.style.display = "block";
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-    .then(stream => {
-      video.srcObject = stream;
-      video.play();
-      state.cameras[prefix] = stream;
-      scanLoop(prefix, video, input);
-    })
-    .catch(() => {
-      wrap.style.display = "none";
-      tg.showAlert("Нет доступа к камере. Введите номер вручную.");
-    });
-}
-
-function scanLoop(prefix, video, input) {
-  if (!state.cameras[prefix]) return;
-  const canvas = document.createElement("canvas");
-  const ctx    = canvas.getContext("2d");
-
-  // Троттлинг: jsQR запускается не чаще 4 раз/сек (каждые 250 мс)
-  // Без этого — нагрев телефона и зависание кнопок на бюджетных устройствах
-  let lastScanTime = 0;
-
-  function tick(now) {
-    if (!state.cameras[prefix]) return;
-
-    // Планируем следующий кадр сразу — RAF продолжает работать
-    state.rafIds[prefix] = requestAnimationFrame(tick);
-
-    // Пропускаем кадр если прошло меньше 250 мс с последнего скана
-    if (now - lastScanTime < 250) return;
-    lastScanTime = now;
-
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      canvas.width  = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
-      const img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
-      if (code && code.data) {
-        input.value = code.data.trim();
-        stopCamera(prefix);
-        tg.HapticFeedback.impactOccurred("medium");
-        if (prefix === "rec") checkReception();
-        if (prefix === "iss") findIssuance();
-        if (prefix === "ret") checkReturn();
-      }
+async function start(){saveSetup();show('waveScreen');await loadOrCreateWave();}
+async function loadOrCreateWave(){
+  setBusy(true);$('waveContent').innerHTML='<div class="card empty">⏳ Формирую маршрут отбора...</div>';
+  try{
+    let data=await rpc('get_active_picking_wave',{p_operator_id:state.operatorId,p_station_id:state.stationId});
+    if(!data.has_wave){
+      const route=$('routeInput').value.trim();const pvz=$('pvzInput').value.trim();
+      data=await rpc('create_picking_wave',{p_operator_id:state.operatorId,p_station_id:state.stationId,p_max_orders:Number($('waveSizeInput').value||50),p_route_number:route?Number(route):null,p_pvz_code:pvz||null});
     }
+    applyWave(data);render();
+  }catch(e){$('waveContent').innerHTML=`<div class="card empty">❌ ${esc(e.message)}<br><br><button class="btn secondary" onclick="show('setup')">Настройки</button></div>`;h('error')}
+  finally{setBusy(false)}
+}
+async function refreshWave(){if(!state.wave?.id)return loadOrCreateWave();setBusy(true);try{const data=await rpc('get_picking_wave_details',{p_wave_id:state.wave.id});applyWave(data);render();}catch(e){toast(e.message);h('error')}finally{setBusy(false)}}
+function applyWave(data){state.wave=data.wave||null;state.progress=data.progress||{};state.currentTask=(data.current_task&&Object.keys(data.current_task).length)?data.current_task:null;state.tasks=data.tasks||[];state.orders=data.orders||[];}
+function render(){
+  if(!state.wave){$('waveContent').innerHTML='<div class="card empty">Нет активной волны</div>';return}
+  const p=state.progress||{};const percent=pct(p.qty_picked,p.qty_plan);const t=state.currentTask;
+  if(state.wave.status!=='IN_PROGRESS'){
+    $('waveContent').innerHTML=`<div class="card empty"><div style="font-size:42px;margin-bottom:8px">✅</div><b>Волна ${esc(state.wave.wave_no)} завершена</b><p style="margin-top:8px">${esc(p.qty_picked)}/${esc(p.qty_plan)} шт.</p><button class="btn full" style="margin-top:14px" onclick="newWave()">Создать новую волну</button></div>`;return;
   }
-  state.rafIds[prefix] = requestAnimationFrame(tick);
-}
-
-function stopCamera(prefix) {
-  if (state.rafIds[prefix]) {
-    cancelAnimationFrame(state.rafIds[prefix]);
-    state.rafIds[prefix] = null;
-  }
-  if (state.cameras[prefix]) {
-    state.cameras[prefix].getTracks().forEach(t => t.stop());
-    state.cameras[prefix] = null;
-    // Очищаем srcObject — iOS WebKit иначе держит последний кадр в памяти
-    const vid = document.getElementById(prefix + "Video");
-    if (vid) vid.srcObject = null;
-  }
-  const wrap = document.getElementById(prefix + "ScanWrap");
-  if (wrap) wrap.style.display = "none";
-}
-
-function stopAllCameras() {
-  ["rec","iss","ret"].forEach(stopCamera);
-}
-
-// ══════════════════════════════════════════
-// ПРИЁМКА
-// ══════════════════════════════════════════
-async function checkReception() {
-  const orderId = document.getElementById("recOrderInput").value.trim();
-  if (!orderId) { showResult("recResult","err","Введите номер заказа",""); return; }
-
-  showResult("recResult","info","Проверка...","");
-  const res = await api("check_reception", { order_id: orderId });
-
-  if (!res.found) {
-    showResult("recResult","err","❌ " + res.msg, "");
-    document.getElementById("recCellSection").style.display = "none";
-    state.recRow = null;
-    return;
-  }
-
-  state.recRow = res.row;
-  showResult("recResult","ok",
-    "✅ Заказ найден",
-    "ПВЗ: " + res.pvz + " · Позиций: " + res.plan + " · Телефон: " + res.phone
-  );
-  document.getElementById("recCellSection").style.display = "block";
-  document.getElementById("recCellInput").focus();
-}
-
-async function saveReception() {
-  const cell = document.getElementById("recCellInput").value.trim();
-  const orderId = document.getElementById("recOrderInput").value.trim();
-  if (!cell) { tg.showAlert("Укажите ячейку хранения"); return; }
-
-  const res = await api("save_reception", { order_id: orderId, cell });
-  if (res.success) {
-    tg.HapticFeedback.notificationOccurred("success");
-    showResult("recResult","ok","✅ " + res.msg, "");
-    document.getElementById("recCellSection").style.display = "none";
-    document.getElementById("recOrderInput").value = "";
-    document.getElementById("recCellInput").value  = "";
-    state.recRow = null;
-    loadCounts();
-  } else {
-    showResult("recResult","err","❌ " + res.msg, "");
-  }
-}
-
-// ══════════════════════════════════════════
-// ВЫДАЧА
-// ══════════════════════════════════════════
-async function findIssuance() {
-  const orderId = document.getElementById("issOrderInput").value.trim();
-  if (!orderId) { showResult("issResult","err","Введите номер заказа",""); return; }
-
-  showResult("issResult","info","Поиск...","");
-  const res = await api("find_issuance", { order_id: orderId });
-
-  if (!res.found) {
-    showResult("issResult","err","❌ " + res.msg, "");
-    document.getElementById("issConfirmSection").style.display = "none";
-    return;
-  }
-
-  state.issRow = res.row;
-  document.getElementById("issCellDisplay").textContent = "Ячейка: " + res.cell;
-  showResult("issResult","ok","✅ Заказ найден · " + res.phone, "");
-  document.getElementById("issConfirmSection").style.display = "block";
-  tg.HapticFeedback.impactOccurred("light");
-}
-
-async function saveIssuance() {
-  const orderId = document.getElementById("issOrderInput").value.trim();
-  const res = await api("save_issuance", { order_id: orderId, row: state.issRow });
-
-  if (res.success) {
-    tg.HapticFeedback.notificationOccurred("success");
-    showResult("issResult","ok","✅ " + res.msg, "");
-    document.getElementById("issConfirmSection").style.display = "none";
-    document.getElementById("issOrderInput").value = "";
-    state.issRow = null;
-    loadCounts();
-  } else {
-    showResult("issResult","err","❌ " + res.msg, "");
-  }
-}
-
-function resetIssuance() {
-  document.getElementById("issConfirmSection").style.display = "none";
-  document.getElementById("issOrderInput").value = "";
-  document.getElementById("issResult").classList.remove("visible");
-  state.issRow = null;
-}
-
-// ══════════════════════════════════════════
-// ВОЗВРАТ
-// ══════════════════════════════════════════
-async function checkReturn() {
-  const orderId = document.getElementById("retOrderInput").value.trim();
-  if (!orderId) { showResult("retResult","err","Введите номер заказа",""); return; }
-
-  showResult("retResult","info","Проверка...","");
-  const res = await api("check_return", { order_id: orderId });
-
-  if (!res.found) {
-    showResult("retResult","err","❌ " + res.msg, "");
-    document.getElementById("retReasonSection").style.display = "none";
-    return;
-  }
-
-  state.retRow = res.row;
-  showResult("retResult","ok","✅ Заказ найден · " + res.phone, "");
-  document.getElementById("retReasonSection").style.display = "block";
-}
-
-function selectReason(btn, reason) {
-  document.querySelectorAll(".reason-btn").forEach(b => b.classList.remove("selected"));
-  btn.classList.add("selected");
-  state.selectedReason = reason;
-  document.getElementById("retCustomReason").value = "";
-}
-
-// Сброс выбранных кнопок когда оператор начинает вводить свою причину
-function clearSelectedReasons() {
-  document.querySelectorAll(".reason-btn").forEach(b => b.classList.remove("selected"));
-  state.selectedReason = "";
-}
-
-async function saveReturn() {
-  const orderId = document.getElementById("retOrderInput").value.trim();
-  const custom  = document.getElementById("retCustomReason").value.trim();
-  const reason  = custom || state.selectedReason;
-
-  if (!reason) { tg.showAlert("Выберите или введите причину возврата"); return; }
-
-  const res = await api("save_return", { order_id: orderId, reason, row: state.retRow });
-  if (res.success) {
-    tg.HapticFeedback.notificationOccurred("success");
-    showResult("retResult","ok","✅ " + res.msg, "");
-    document.getElementById("retReasonSection").style.display = "none";
-    document.getElementById("retOrderInput").value = "";
-    document.querySelectorAll(".reason-btn").forEach(b => b.classList.remove("selected"));
-    state.selectedReason = "";
-    state.retRow = null;
-    loadCounts();
-  } else {
-    showResult("retResult","err","❌ " + res.msg, "");
-  }
-}
-
-// ══════════════════════════════════════════
-// СПИСОК ЗАКАЗОВ
-// ══════════════════════════════════════════
-let currentOrderTab = 'all';
-
-async function loadOrders() {
-  document.getElementById("ordersList").innerHTML =
-    '<div class="loader"><div class="spinner"></div>Загрузка...</div>';
-  document.getElementById("orderSearchInput").value = "";
-  const res = await api("get_my_orders");
-  state.allOrders = res.orders || [];
-  applyOrderFilters();
-}
-
-function setOrderTab(filter, btn) {
-  document.querySelectorAll("#screen-orders .filter-row .filter-btn")
-    .forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  currentOrderTab = filter;
-  applyOrderFilters();
-}
-
-// Комбинированная фильтрация: таб + поиск по ID или телефону
-function applyOrderFilters() {
-  const query = document.getElementById("orderSearchInput").value.toLowerCase().trim();
-  let filtered = state.allOrders;
-
-  if (currentOrderTab === "waiting") filtered = filtered.filter(o => o.status === "Ожидает приёмки");
-  if (currentOrderTab === "stored")  filtered = filtered.filter(o => o.status === "На хранении");
-  if (currentOrderTab === "issued")  filtered = filtered.filter(o => o.status === "Выдан");
-
-  if (query) {
-    filtered = filtered.filter(o =>
-      (o.orderId && String(o.orderId).toLowerCase().includes(query)) ||
-      (o.phone   && String(o.phone).toLowerCase().includes(query))
-    );
-  }
-
-  renderOrders(filtered);
-}
-
-// Аккордеон: разворачивает карточку, закрывает остальные
-function toggleOrderDetails(element) {
-  if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
-  document.querySelectorAll(".order-item.expanded").forEach(el => {
-    if (el !== element) el.classList.remove("expanded");
-  });
-  element.classList.toggle("expanded");
-}
-
-// Быстрый переход на выдачу или возврат с подставленным номером
-function quickAction(action, orderId, event) {
-  event.stopPropagation();
-  goTo(action);
-  setTimeout(() => {
-    if (action === "issuance") {
-      document.getElementById("issOrderInput").value = orderId;
-      findIssuance();
-    } else if (action === "return") {
-      document.getElementById("retOrderInput").value = orderId;
-      checkReturn();
-    }
-  }, 200);
-}
-
-const STATUS_DOT = {
-  "Ожидает приёмки": "#999999",
-  "На хранении":     "#ff9500",
-  "Выдан":           "#34c759",
-  "Возврат":         "#ff3b30",
-};
-
-function renderOrders(orders) {
-  const el = document.getElementById("ordersList");
-  if (!orders.length) {
-    el.innerHTML = `
-      <div style="text-align:center;padding:40px 20px;color:var(--tg-hint)">
-        <div style="font-size:40px;margin-bottom:12px">📭</div>
-        <div style="font-size:15px;font-weight:500">Ничего не найдено</div>
-        <div style="font-size:13px;margin-top:6px">Попробуйте изменить поиск или фильтр</div>
-      </div>`;
-    return;
-  }
-
-  el.innerHTML = orders.map(o => {
-    const isStored  = o.status === "На хранении";
-    const actionsHtml = isStored ? `
-      <div class="order-actions">
-        <button class="action-btn issue"
-                onclick="quickAction('issuance','${esc(o.orderId)}',event)">📤 Выдать</button>
-        <button class="action-btn return"
-                onclick="quickAction('return','${esc(o.orderId)}',event)">↩️ Возврат</button>
-      </div>` : '';
-
-    return `
-      <div class="order-item" onclick="toggleOrderDetails(this)">
-        <div class="order-item-header">
-          <div class="order-status-dot" style="background:${STATUS_DOT[o.status]||'#ccc'}"></div>
-          <div class="order-info">
-            <div class="order-id">${esc(o.orderId)}</div>
-            <div class="order-meta">${esc(o.status)} · ${esc(o.phone)}</div>
-            ${o.cell ? `<div class="cell-badge">📦 Ячейка: ${esc(o.cell)}</div>` : ''}
-          </div>
-        </div>
-        ${actionsHtml}
-      </div>`;
-  }).join('');
-}
-
-// ══════════════════════════════════════════
-// ОТЧЁТ ТУ/РУ
-// ══════════════════════════════════════════
-let reportData = [];
-
-async function loadReport(filter) {
-  document.getElementById("reportList").innerHTML =
-    '<div class="loader"><div class="spinner"></div>Загрузка...</div>';
-  const res = await api("get_report", { filter });
-  reportData = res.rows || [];
-
-  const s = res.stats || {};
-  document.getElementById("reportStats").innerHTML = `
-    <div class="stat-card"><div class="stat-num">${s.total||0}</div><div class="stat-lbl">Всего</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--orange)">${s.waiting||0}</div><div class="stat-lbl">Ожидают</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--blue)">${s.received||0}</div><div class="stat-lbl">Приняты</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--green)">${s.issued||0}</div><div class="stat-lbl">Выданы</div></div>
-  `;
-  renderReport(reportData);
-}
-
-function filterReport(filter, btn) {
-  document.querySelectorAll("#screen-report .filter-row .filter-btn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  loadReport(filter);
-}
-
-const BADGE = {
-  "Принят":         ["badge-received","Принят"],
-  "Выдан":          ["badge-issued",  "Выдан"],
-  "Возврат":        ["badge-returned","Возврат"],
-  "Ожидает приемки":["badge-waiting", "Ожидает"],
-};
-
-function renderReport(rows) {
-  const el = document.getElementById("reportList");
-  if (!rows.length) {
-    el.innerHTML = `
-      <div style="text-align:center;padding:40px 20px;color:var(--tg-hint)">
-        <div style="font-size:40px;margin-bottom:12px">📊</div>
-        <div style="font-size:15px;font-weight:500">Нет данных для отображения</div>
-        <div style="font-size:13px;margin-top:6px">Попробуйте другой фильтр</div>
-      </div>`;
-    return;
-  }
-  // [FIX-4] Все данные из таблицы экранируются через esc()
-  el.innerHTML = rows.map(r => {
-    const [bc, bt] = BADGE[r.statusRec] || ["badge-waiting","—"];
-    return `
-      <div class="report-row">
-        <div class="rr-order">
-          ${esc(r.orderId)}
-          <span class="status-badge ${bc}">${bt}</span>
-          ${r.statusIss === "Выдан" ? '<span class="status-badge badge-issued">Выдан</span>' : ''}
-          ${r.statusRet === "Возврат" ? '<span class="status-badge badge-returned">Возврат</span>' : ''}
-        </div>
-        <div class="rr-meta">${esc(r.pvz)} · ${esc(r.phone)} · ${esc(r.createdAt)}</div>
-        ${r.reason ? `<div class="rr-meta">Причина: ${esc(r.reason)}</div>` : ''}
+  const currentHtml=t?`
+    <div class="hero">
+      <div class="heroTop">
+        <div><div class="muted" style="color:rgba(255,255,255,.75)">Текущая ячейка</div><div class="cellBig">${esc(t.cell_code)}</div><div class="skuBig">${esc(t.sku)}</div><div class="heroMeta">${esc(t.item_name||'')} ${t.attr1?`· ${esc(t.attr1)}`:''} ${t.attr2?`· ${esc(t.attr2)}`:''}</div></div>
+        <div class="qtyBox"><div class="n">${esc(t.qty_remaining)}</div><div class="t">осталось</div></div>
       </div>
-    `;
-  }).join('');
+      <div class="progress"><div class="fill" style="width:${percent}%"></div></div>
+      <div class="heroMeta">Волна: ${esc(state.wave.wave_no)} · ${esc(p.qty_picked)}/${esc(p.qty_plan)} шт. · заказов ${esc(p.orders_done)}/${esc(p.orders_total)}</div>
+    </div>
+    <div class="scan"><label>Сканируйте SKU из текущей ячейки</label><div class="scanRow"><input id="skuInput" placeholder="SKU" autocomplete="off"><button class="btn green" onclick="scanSku()">OK</button></div><div id="scanMsg" class="scanMsg info">Ожидаю SKU: ${esc(t.sku)}</div></div>
+  `:`
+    <div class="hero"><div class="heroTop"><div><div class="muted" style="color:rgba(255,255,255,.75)">Маршрут завершён</div><div class="cellBig">Готово</div><div class="heroMeta">Все товары в волне отобраны. Завершите волну, чтобы перевести заказы в ASSEMBLED.</div></div><div class="qtyBox"><div class="n">${esc(p.qty_picked||0)}</div><div class="t">шт.</div></div></div><div class="progress"><div class="fill" style="width:100%"></div></div></div>`;
+  $('waveContent').innerHTML=`
+    <div class="stats"><div class="stat"><div class="v">${esc(p.orders_total||0)}</div><div class="l">заказов</div></div><div class="stat"><div class="v">${esc(p.qty_picked||0)}/${esc(p.qty_plan||0)}</div><div class="l">шт.</div></div><div class="stat"><div class="v">${percent}%</div><div class="l">прогресс</div></div></div>
+    ${currentHtml}
+    <div class="row" style="margin-bottom:12px"><button class="btn secondary" onclick="refreshWave()">↻ Обновить</button><button class="btn green" onclick="finishWave()" ${p.is_complete?'':'disabled'}>✅ Завершить волну</button></div>
+    <button class="btn red full" onclick="cancelWave()" style="margin-bottom:12px">Отменить волну и снять резерв</button>
+    <div class="tabs"><button class="tab ${state.tab==='route'?'active':''}" onclick="setTab('route')">Маршрут</button><button class="tab ${state.tab==='orders'?'active':''}" onclick="setTab('orders')">Заказы</button></div>
+    <div id="tabContent"></div>`;
+  renderTab();setTimeout(()=>$('skuInput')?.focus(),80);
 }
-
-// ══════════════════════════════════════════
-// УТИЛИТЫ
-// ══════════════════════════════════════════
-
-// [FIX-4] XSS: экранируем все данные из Google Sheets перед вставкой в innerHTML
-function esc(str) {
-  return String(str || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+function setTab(tab){state.tab=tab;renderTab();document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));}
+function renderTab(){const el=$('tabContent');if(!el)return;if(state.tab==='orders'){renderOrders(el)}else{renderRoute(el)}}
+function renderRoute(el){
+  const rows=state.tasks||[]; if(!rows.length){el.innerHTML='<div class="card empty">Маршрут пуст</div>';return}
+  el.innerHTML=`<div class="routeList">${rows.map(t=>{
+    const cls=t.done?'task done':(state.currentTask&&t.sku===state.currentTask.sku&&t.cell_code===state.currentTask.cell_code?'task current':'task');
+    const badge=t.done?'<span class="badge green">готово</span>':(t.cell_code==='НЕТ ОСТАТКА'?'<span class="badge red">нет остатка</span>':`<span class="badge">${esc(t.qty_remaining)} шт.</span>`);
+    return `<div class="${cls}"><div class="taskTop"><div><div class="taskCell">${esc(t.cell_code)}</div><div class="taskSku">${esc(t.sku)}</div><div class="taskName">${esc(t.item_name||'')}</div><div class="muted" style="margin-top:5px">Заказов: ${esc(t.orders_count)} · Отбор: ${esc(t.qty_picked)}/${esc(t.qty_plan)}</div></div><div class="taskQty">${badge}</div></div></div>`
+  }).join('')}</div>`;
 }
-
-// ══════════════════════════════════════════
-// SECURE API: Telegram initData → Supabase Edge Function
-// ══════════════════════════════════════════
-const USE_MOCK = false;
-
-const delay = ms => new Promise(res => setTimeout(res, ms));
-
-function getTelegramInitData() {
-  return window.Telegram?.WebApp?.initData || "";
+function renderOrders(el){
+  const rows=state.orders||[]; if(!rows.length){el.innerHTML='<div class="card empty">Заказов нет</div>';return}
+  el.innerHTML=rows.map(o=>`<div class="order"><div class="row"><div><div class="orderId">#${esc(o.external_id)}</div><div class="orderMeta">ПВЗ ${esc(o.pvz_code||'—')} · Маршрут ${esc(o.route_number||'—')} · ${esc(o.status)}</div></div><span class="badge ${o.done?'green':''}">${esc(o.qty_picked)}/${esc(o.qty_plan)}</span></div><div class="progress"><div class="fill" style="width:${pct(o.qty_picked,o.qty_plan)}%"></div></div></div>`).join('');
 }
-
-async function api(action, extra = {}) {
-  if (USE_MOCK) {
-    await delay(250);
-    return {};
-  }
-
-  try {
-    const initData = getTelegramInitData();
-    if (!initData && !DEV_ALLOW_BROWSER_TEST) {
-      tg.showAlert("Mini App открыт не из Telegram или отсутствует initData. Откройте приложение через Telegram-бота.");
-      return {};
-    }
-
-    const resp = await fetch(PVZ_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-        "apikey": SUPABASE_ANON_KEY,
-        "x-telegram-init-data": initData
-      },
-      body: JSON.stringify({
-        action,
-        payload: extra || {},
-        // Дублируем в body для окружений/прокси, которые режут custom headers.
-        initData
-      })
-    });
-
-    const text = await resp.text();
-    let json;
-    try { json = text ? JSON.parse(text) : {}; }
-    catch(e) {
-      console.error("Bad JSON from Edge Function", text);
-      tg.showAlert("Ошибка ответа сервера. Проверьте Edge Function pvz-api.");
-      return {};
-    }
-
-    if (!resp.ok || !json.ok) {
-      console.error("PVZ API error", action, json);
-      tg.showAlert("Ошибка сервера: " + (json.error || resp.statusText));
-      return {};
-    }
-
-    return json.data || {};
-  } catch(e) {
-    console.error("PVZ API fetch error:", action, e);
-    tg.showAlert("Сбой сети или API: " + e.message);
-    return {};
-  }
+async function scanSku(){
+  if(state.busy)return; const input=$('skuInput'); const sku=(input?.value||'').trim(); if(!sku)return;
+  const expected=state.currentTask; if(!expected){toast('Волна уже отобрана');input.value='';return}
+  setBusy(true);$('scanMsg').className='scanMsg info';$('scanMsg').textContent='Проверяю...';
+  try{const data=await rpc('scan_wave_sku',{p_wave_id:state.wave.id,p_sku:sku,p_expected_cell:expected.cell_code,p_operator_id:state.operatorId,p_station_id:state.stationId});applyWave(data);toast(data.message||`Принято: ${sku}`);h('success');render();}
+  catch(e){$('scanMsg').className='scanMsg err';$('scanMsg').textContent=e.message;toast(e.message);h('error')}
+  finally{if(input)input.value='';setBusy(false);setTimeout(()=>$('skuInput')?.focus(),80)}
 }
-
-function showResult(id, type, title, body) {
-  const el = document.getElementById(id);
-  el.className = "result-card visible " + type;
-  el.innerHTML = `<div class="rc-title">${title}</div><div class="rc-body">${body}</div>`;
-}
-
-// ══════════════════════════════════════════
-// СТАРТ
-// ══════════════════════════════════════════
-
-// Проверка конфига до запуска
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_URL.includes("ВСТАВЬТЕ")) {
-  document.body.innerHTML = `
-    <div style="padding:32px;font-family:sans-serif;color:#c00;text-align:center">
-      <div style="font-size:48px;margin-bottom:16px">⚙️</div>
-      <h2>Supabase не настроен</h2>
-      <p style="margin-top:8px;color:#555;font-size:14px">Укажите <code>SUPABASE_URL</code> и <code>SUPABASE_KEY</code> в HTML.</p>
-    </div>`;
-} else { init(); }
+async function finishWave(){if(state.busy||!state.wave)return;if(!confirm('Завершить волну и списать весь резерв по заказам?'))return;setBusy(true);try{const data=await rpc('finish_picking_wave',{p_wave_id:state.wave.id,p_operator_id:state.operatorId,p_station_id:state.stationId});applyWave(data);toast(data.message||'Волна завершена');h('success');render();}catch(e){toast(e.message);h('error')}finally{setBusy(false)}}
+async function cancelWave(){if(state.busy||!state.wave)return;const reason=prompt('Причина отмены волны','Отмена оператора')||'';if(!confirm('Снять весь резерв и вернуть заказы в NEW?'))return;setBusy(true);try{const data=await rpc('cancel_picking_wave',{p_wave_id:state.wave.id,p_operator_id:state.operatorId,p_station_id:state.stationId,p_reason:reason});applyWave(data);toast(data.message||'Волна отменена');h('warning');render();}catch(e){toast(e.message);h('error')}finally{setBusy(false)}}
+async function newWave(){state.wave=null;show('setup')}
+$('startBtn').onclick=start;
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement?.id==='skuInput')scanSku()});
+init();
 </script>
 </body>
 </html>
